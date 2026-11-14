@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { notifyPlanChanged } from './planEvents';
 
 /** Browser-side JSON calls to our API routes, reading the spec §D error shape. */
 
@@ -26,7 +27,7 @@ function retryAfter(response: Response): number | null {
   return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : null;
 }
 
-export async function sendJson(method: 'POST' | 'PUT' | 'DELETE', url: string, body?: unknown): Promise<ApiResult> {
+export async function sendJson(method: 'POST' | 'PUT' | 'DELETE' | 'PATCH', url: string, body?: unknown): Promise<ApiResult> {
   let response: Response;
   try {
     response = await fetch(url, {
@@ -38,7 +39,10 @@ export async function sendJson(method: 'POST' | 'PUT' | 'DELETE', url: string, b
     return { ok: false, status: 0, code: 'NETWORK', issues: [], retryAfterSec: null };
   }
   const payload: unknown = await response.json().catch(() => null);
-  if (response.ok) return { ok: true, data: payload };
+  if (response.ok) {
+    if (url === '/api/plan' || url === '/api/gig-check') notifyPlanChanged();
+    return { ok: true, data: payload };
+  }
 
   const parsed = ApiErrorBodySchema.safeParse(payload);
   return {

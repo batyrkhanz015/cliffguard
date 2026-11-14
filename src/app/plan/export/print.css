@@ -1,0 +1,10 @@
+@media print {
+  @page { size: auto; margin: 16mm; }
+  html, body { background: white !important; color: black !important; }
+  body > header, body > footer { display: none !important; }
+  .plan-export { max-width: none; padding: 0; font-size: 10pt; }
+  .plan-export h1 { font-size: 20pt; }
+  .plan-export h2 { break-after: avoid; }
+  .plan-export article, .plan-export dl > div { break-inside: avoid; }
+  .plan-export a { color: black; text-decoration: none; }
+}
