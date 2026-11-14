@@ -34,3 +34,6 @@ coverage/
 
 # agent worktrees (local scratch copies)
 .claude/worktrees/
+
+# written by next dev
+AGENTS.md
