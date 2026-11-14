@@ -44,7 +44,7 @@ export function useGigCheck(saved: GigOffer | null): GigCheckState {
     if (outcome === null) return;
     setLoading(false);
     setError(outcome.error);
-    if (outcome.result !== null) setResult(outcome.result);
+    setResult(outcome.result);
   }, []);
 
   const check = useCallback(

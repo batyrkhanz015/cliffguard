@@ -10,6 +10,8 @@ The exact string `true` enables grants; missing, false, or differently cased val
 
 ## T7 merge points
 
+- `requestDemoUnlock` dispatches `cliffguard:access-changed` (`notifyAccessChanged` in `@/lib/planEvents`) after a successful grant. Only T7's plan preview listens, so it drops its locked cards; `PlanAccess` keeps refreshing itself through `onUnlocked` and ignores this event, so it refreshes once.
+
 - T8 deliberately does not create or change `/plan/page.tsx`, result/gig components, or T6's plan/progress/household routes. `src/app/plan/layout.tsx` renders the T7 page followed by the reusable `PlanAccess` panel. The panel is hidden on `/plan/export`. `/unlock` provides the same complete access flow independently of the incoming page.
 - The panel fetches `GET /api/plan/access` on mount, window focus, explicit **Refresh full details**, successful unlock, and a plan-change event. All protected content is computed server-side. Requests use `no-store`, and stale responses are ignored.
 - `src/lib/api.ts` is the small expected merge point: add `PATCH` to `sendJson`'s method union and keep the `notifyPlanChanged()` call after successful `/api/plan` or `/api/gig-check` requests. If T7 uses another API client, import `notifyPlanChanged` from `@/lib/planEvents` and call it **after a successful request has saved preferences or the gig**. Equivalent event: `window.dispatchEvent(new Event('cliffguard:plan-changed'))`.
