@@ -31,8 +31,19 @@ export function Footer() {
   return (
     <footer className="bg-night text-gray-400">
       <div className="mx-auto w-full max-w-6xl px-4 py-6 text-sm sm:px-6">
-        <p>Education, not tax advice. Rules as of Nov 2026.</p>
-        {asking ? (
+        <p>
+          Education, not tax advice. Rules as of Nov 2026.{' '}
+          <button
+            type="button"
+            onClick={() => setState('confirming')}
+            disabled={asking}
+            className={LINK_BUTTON}
+          >
+            Delete my data
+          </button>
+          .
+        </p>
+        {asking && (
           <div role="group" aria-label="Confirm deleting your data" className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="text-white">Delete everything? This can&apos;t be undone.</p>
             <button
@@ -53,10 +64,6 @@ export function Footer() {
               Cancel
             </button>
           </div>
-        ) : (
-          <button type="button" onClick={() => setState('confirming')} className={LINK_BUTTON}>
-            Delete my data
-          </button>
         )}
         <p role="status" className="min-h-5 text-cliff">
           {state === 'deleting' && <span className="text-gray-400">Deleting your data…</span>}

@@ -4,7 +4,7 @@ T8 implements the later build-handoff ruling: demo unlock first, without Stripe.
 
 ## Run locally
 
-Set `DEMO_UNLOCK_ENABLED=true` in `.env.local` (or the environment of the dev process), then start `npm run dev`. Open `/unlock`. With no household, choose **Try Dani’s family** to load the sample on that page, or enter household inputs at `/check`. Choose a free Rescue or Year demo, review instructions, check proofs, then open **Tax-preparer export** and use **Print / Save as PDF**.
+Set `DEMO_UNLOCK_ENABLED=true` in `.env.local` (or the environment of the dev process), then start `npm run dev`. Open `/`, choose **Try Dani’s family** (or enter household inputs at `/check`), then go to `/plan` (`/unlock` redirects there) and choose **Unlock Year demo — free**, review instructions, check proofs, then open **Tax-preparer export** and use **Print / Save as PDF**.
 
 The exact string `true` enables grants; missing, false, or differently cased values disable them in every environment. The flag is server-only. Enabling it in production deliberately allows every visitor with a saved household to grant themselves demo access. Production still requires the existing Upstash configuration; development can use T6's memory store. Changing the flag prevents new grants; it does not revoke previously stored, unexpired access.
 
