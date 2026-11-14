@@ -21,7 +21,8 @@ export const PUT = route(async (request) => {
   const sid = await getSid();
   await enforceLimit('householdWrite', sid);
   const existing = await loadHousehold(sid);
-  const household = replaceInput(existing, { sid, source: 'manual', input, now: new Date().toISOString() });
+  const source = request.headers.get('x-cliffguard-input-source') === 'upload' ? 'upload' : 'manual';
+  const household = replaceInput(existing, { sid, source, input, now: new Date().toISOString() });
   const diagnosis = diagnose(household.input, { gig: null, asOf: todayAsOf() });
   await saveHousehold(household);
   return Response.json({ household: householdView(household), diagnosis });

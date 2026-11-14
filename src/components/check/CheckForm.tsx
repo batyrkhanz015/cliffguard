@@ -17,6 +17,8 @@ import {
   type StepNumber,
   type StepProps,
 } from '@/lib/check/draft';
+import type { EligibilityNoticeExtraction, NoticeSource } from '@/lib/noticeExtraction';
+import { confirmNotice, manualDraftState, noticeSaveHeaders } from '@/lib/check/notice';
 import { MFS_UNSUPPORTED, errorsForStep, firstStepWithError, validateDraft } from '@/lib/check/validate';
 import { DANI } from '@/samples/dani';
 import { CheckProgress } from './CheckProgress';
@@ -74,7 +76,17 @@ function optionsAnswered(draft: CheckDraft): boolean {
 
 export function CheckForm({ initialStep }: { initialStep: StepNumber }) {
   const router = useRouter();
-  const [draft, setDraft] = useState<CheckDraft>(EMPTY_DRAFT);
+  const [formState, setFormState] = useState(() => manualDraftState(EMPTY_DRAFT));
+  const { draft, inputSource } = formState;
+  const [uploadGeneration, setUploadGeneration] = useState(0);
+  function setDraft(update: CheckDraft | ((current: CheckDraft) => CheckDraft)) {
+    setFormState((current) => ({ ...current, draft: typeof update === 'function' ? update(current.draft) : update }));
+  }
+  function confirmExtraction(notice: EligibilityNoticeExtraction, source: NoticeSource) {
+    setFormState((current) => confirmNotice(current, notice, source));
+    setServerErrors({});
+    setFilledSample(false);
+  }
   const [step, setStep] = useState<StepNumber>(initialStep);
   const [attempted, setAttempted] = useState<ReadonlySet<StepNumber>>(new Set());
   const [serverErrors, setServerErrors] = useState<FieldErrors>({});
@@ -128,7 +140,8 @@ export function CheckForm({ initialStep }: { initialStep: StepNumber }) {
   }
 
   function fillSample() {
-    setDraft(draftFromInput(DANI));
+    setFormState(manualDraftState(draftFromInput(DANI)));
+    setUploadGeneration((current) => current + 1);
     setAttempted(new Set());
     setServerErrors({});
     setFilledSample(true);
@@ -164,7 +177,7 @@ export function CheckForm({ initialStep }: { initialStep: StepNumber }) {
     }
     setSaving(true);
     setToast(null);
-    const response = await sendJson('PUT', '/api/household', result.input);
+    const response = await sendJson('PUT', '/api/household', result.input, { headers: noticeSaveHeaders(inputSource) });
     if (response.ok) {
       router.push('/result');
       return;
@@ -185,6 +198,12 @@ export function CheckForm({ initialStep }: { initialStep: StepNumber }) {
       focusNext.current = 'invalid';
       return;
     }
+    const missingEarlier = ([1, 2, 3, 4, 5] as const).find((prior) => prior < step && Object.keys(errorsForStep(clientErrors, prior)).length > 0);
+    if (missingEarlier) {
+      setAttempted((current) => new Set(current).add(missingEarlier));
+      goTo(missingEarlier);
+      return;
+    }
     goTo(next);
   }
 
@@ -202,7 +221,9 @@ export function CheckForm({ initialStep }: { initialStep: StepNumber }) {
           </Button>
         </div>
         <p role="status" className="mt-2 text-sm text-gray-600">
-          {filledSample ? "Dani's sample numbers are filled in. Change anything you like." : ''}
+          {formState.demoNoticeApplied
+            ? 'Demo notice values are filled in. These are fictional sample values; replace them with your own for a personal check.'
+            : filledSample ? "Dani's sample numbers are filled in. Change anything you like." : ''}
         </p>
         <CheckProgress step={step} />
 
@@ -212,7 +233,13 @@ export function CheckForm({ initialStep }: { initialStep: StepNumber }) {
               {STEP_TITLES[step]}
             </h2>
             <div className="mt-6">
-              <StepView draft={draft} errors={errors} onChange={change} onAdultChange={changeAdult} />
+              {step === 2 && Object.keys(errorsForStep(clientErrors, 1)).length > 0 && (
+                <p role="note" className="mb-5 text-sm text-gray-700">
+                  You can read your notice here. We also need your household answers.{' '}
+                  <Button variant="quiet" onClick={() => goTo(1)}>Review household questions</Button>
+                </p>
+              )}
+              <StepView key={`${step}-${uploadGeneration}`} draft={draft} errors={errors} onChange={change} onAdultChange={changeAdult} onNoticeConfirm={confirmExtraction} />
             </div>
           </Card>
 

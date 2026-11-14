@@ -54,6 +54,50 @@ describe('loadHousehold (Review Focus 3)', () => {
 describe('replaceInput', () => {
   const saved = { keepMyCash: false, leverOrder: ['hsa' as const, 'sepIra' as const] };
 
+  function householdWithHistory(source: HouseholdRecord['source']): HouseholdRecord {
+    const initial = manualRecord(newSid());
+    return {
+      ...paid(initial, '2027-10-15'),
+      source,
+      input: { ...initial.input, preferences: saved },
+      lastGig: { amount: 5_000, canBillInJanuary: true },
+      planProgress: { hsa: { done: true, doneAt: NOW, proofsChecked: [0] } },
+      checkins: [{
+        id: 'checkin-preserved', asOf: '2026-11-14',
+        received: { seByAdult: { a: 2_000 }, wagesByAdult: { b: 3_000 }, capitalGains: 0, interestOrDividends: 0 },
+        expectedRestAfter: { seByAdult: { a: 4_000 }, wagesByAdult: { b: 5_000 } },
+        result: { magi: 100_000, headroom: 20_000, repayment: 0, alerts: [] },
+      }],
+    };
+  }
+
+  it.each([
+    ['manual', 'upload'],
+    ['upload', 'manual'],
+  ] as const)('preserves household state when changing entry method from %s to %s', (from, to) => {
+    const existing = householdWithHistory(from);
+    const later = '2026-11-15T15:00:00.000Z';
+    const next = replaceInput(existing, { sid: existing.sid, source: to, input: DANI, now: later });
+    expect(next).toEqual({ ...existing, source: to, updatedAt: later });
+    expect(next.lastGig).toEqual(existing.lastGig);
+    expect(next.planProgress).toEqual(existing.planProgress);
+    expect(next.checkins).toEqual(existing.checkins);
+    expect(next.input.preferences).toEqual(saved);
+    expect(next.entitlement).toEqual(existing.entitlement);
+  });
+
+  it.each([
+    ['manual', 'sample_dani'], ['upload', 'sample_dani'],
+    ['sample_dani', 'manual'], ['sample_dani', 'upload'],
+  ] as const)('resets household-specific state across the %s to %s boundary', (from, to) => {
+    const existing = householdWithHistory(from);
+    const next = replaceInput(existing, { sid: existing.sid, source: to, input: DANI, now: NOW });
+    expect(next).toMatchObject({ source: to, lastGig: null, planProgress: {}, checkins: [] });
+    expect(next.input.preferences).toEqual(saved);
+    expect(next.entitlement).toEqual(existing.entitlement);
+    expect(next.createdAt).toBe(existing.createdAt);
+  });
+
   it('keeps the saved preferences over the form defaults', () => {
     const existing = manualRecord(newSid());
     existing.input = { ...existing.input, preferences: saved };
@@ -66,7 +110,7 @@ describe('replaceInput', () => {
     expect(next.input.preferences).toEqual(DANI.preferences);
   });
 
-  it('keeps progress for the same household and starts it fresh on a switch, keeping the purchase', () => {
+  it('keeps personal progress on repeated entry and resets it when switching to the sample, keeping the purchase', () => {
     const existing: HouseholdRecord = {
       ...paid(manualRecord(newSid()), '2027-10-15'),
       lastGig: { amount: 5_000, canBillInJanuary: true },
