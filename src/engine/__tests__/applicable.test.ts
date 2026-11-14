@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { applicableFigure } from '../applicable';
-import { cliffAmount, fplPercent, povertyLine } from '../fpl';
+import { applicableFigure, requiredContribution } from '../applicable';
+import { cliffAmount, fplPercent, householdIncome, povertyLine } from '../fpl';
 import { TY2025_ENHANCED } from '../rules/ty2025-enhanced';
 import { TY2026 } from '../rules/ty2026';
 import { F1 } from './fixtures';
@@ -41,6 +41,17 @@ describe('povertyLine and cliffAmount (2025 guidelines for 2026 coverage)', () =
 
   test('rules without a cliff have no cliff amount', () => {
     expect(cliffAmount('TX', 4, TY2025_ENHANCED)).toBeNull();
+  });
+});
+
+describe('householdIncome (Form 8962 line 3)', () => {
+  test('rounds MAGI to whole dollars', () => {
+    expect(householdIncome(122_035.73)).toBe(122_036);
+    expect(householdIncome(122_035.4)).toBe(122_035);
+  });
+
+  test('a negative total counts as 0', () => {
+    expect(householdIncome(-5_000)).toBe(0);
   });
 });
 
@@ -143,5 +154,20 @@ describe('applicableFigure (test-only TY2025_ENHANCED)', () => {
 
   test('below 150% pays nothing', () => {
     expect(applicableFigure(149, TY2025_ENHANCED)).toBe(0);
+  });
+});
+
+describe('requiredContribution (Form 8962 line 8a)', () => {
+  test('IRS worked example: 71,910 × 0.0996 = 7,162.24 → 7,162', () => {
+    expect(requiredContribution(71_910, 0.0996)).toBe(7_162);
+  });
+
+  test('an exact half rounds up, where float math gives 863.4999…', () => {
+    expect(requiredContribution(27_500, 0.0314)).toBe(864);
+  });
+
+  test('uses household income in whole dollars', () => {
+    expect(requiredContribution(105_000.4, 0.0996)).toBe(10_458);
+    expect(requiredContribution(-1_000, 0.021)).toBe(0);
   });
 });

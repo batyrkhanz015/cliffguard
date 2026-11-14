@@ -20,12 +20,17 @@ export function cliffAmount(state: UsStateCode, householdSize: number, rules: Ru
   return rules.cliffMultiple === null ? null : rules.cliffMultiple * povertyLine(state, householdSize, rules);
 }
 
+/** Household income (Form 8962 line 3): MAGI rounded to whole dollars, and 0 if negative. */
+export function householdIncome(magi: number): number {
+  return Math.max(0, Math.round(magi));
+}
+
 /**
- * Household income as a whole-number percent of the poverty line (Form 8962 lines 3–5):
- * income rounded to whole dollars and floored at 0, then truncated; 401 when it is above the cliff.
+ * Household income as a whole-number percent of the poverty line (Form 8962 lines 3–5),
+ * truncated; 401 when it is above the cliff.
  */
 export function fplPercent(income: number, fpl: number, rules: RuleSet): number {
-  const householdIncome = Math.max(0, Math.round(income));
-  if (rules.cliffMultiple !== null && householdIncome > rules.cliffMultiple * fpl) return OVER_CLIFF_FPL_PERCENT;
-  return Math.floor((householdIncome * 100) / fpl);
+  const dollars = householdIncome(income);
+  if (rules.cliffMultiple !== null && dollars > rules.cliffMultiple * fpl) return OVER_CLIFF_FPL_PERCENT;
+  return Math.floor((dollars * 100) / fpl);
 }

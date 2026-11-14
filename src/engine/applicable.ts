@@ -1,3 +1,4 @@
+import { householdIncome } from './fpl';
 import type { ApplicableBand, RuleSet } from './types';
 
 const BASIS_POINTS = 10_000;
@@ -27,4 +28,12 @@ export function applicableFigure(fplPct: number, rules: RuleSet): number | null 
   const width = band.toPct - band.fromPct;
   const numerator = band.startBp * width + (fplPct - band.fromPct) * (band.endBp - band.startBp);
   return roundHalfUp(numerator, width) / BASIS_POINTS;
+}
+
+/**
+ * Required annual contribution toward the benchmark plan (Form 8962 line 8a): household income
+ * × the applicable figure, to the nearest dollar. Integer basis points, so halves round up exactly.
+ */
+export function requiredContribution(income: number, figure: number): number {
+  return roundHalfUp(Math.round(figure * BASIS_POINTS) * householdIncome(income), BASIS_POINTS);
 }
