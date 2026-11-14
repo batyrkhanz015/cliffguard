@@ -27,12 +27,13 @@ function retryAfter(response: Response): number | null {
   return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : null;
 }
 
-export async function sendJson(method: 'POST' | 'PUT' | 'DELETE' | 'PATCH', url: string, body?: unknown): Promise<ApiResult> {
+export async function sendJson(method: 'POST' | 'PUT' | 'DELETE' | 'PATCH', url: string, body?: unknown, options?: { headers?: Record<string, string>; signal?: AbortSignal }): Promise<ApiResult> {
   let response: Response;
   try {
     response = await fetch(url, {
       method,
-      headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+      headers: { ...(body === undefined ? {} : { 'content-type': 'application/json' }), ...options?.headers },
+      signal: options?.signal,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {

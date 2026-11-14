@@ -1,3 +1,4 @@
+import { UploadNotice } from './UploadNotice';
 import { Disclosure } from '@/components/ui/Disclosure';
 import { fieldIdFor } from '@/components/ui/Field';
 import { MoneyInput } from '@/components/ui/MoneyInput';
@@ -5,10 +6,12 @@ import { Stepper } from '@/components/ui/Stepper';
 import { Toggle } from '@/components/ui/Toggle';
 import { FIELD, benchmarkFieldShown, type StepProps } from '@/lib/check/draft';
 
-export function StepMarketplace({ draft, errors, onChange }: StepProps) {
+export function StepMarketplace({ draft, errors, onChange, onNoticeConfirm }: StepProps) {
   return (
     <div className="space-y-7">
       <p className="text-gray-700">These numbers are on your Marketplace eligibility notice.</p>
+
+      {onNoticeConfirm && <UploadNotice onConfirm={onNoticeConfirm} />}
 
       <MoneyInput
         name={FIELD.incomeEstimate}

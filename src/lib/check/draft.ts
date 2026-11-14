@@ -1,3 +1,4 @@
+import type { EligibilityNoticeExtraction } from '@/lib/noticeExtraction';
 import type { HouseholdInput, UsStateCode } from '@/engine/types';
 import { formatMoneyInput } from '@/lib/money';
 
@@ -59,6 +60,7 @@ export type StepProps = {
   draft: CheckDraft;
   errors: FieldErrors;
   onChange: (patch: Partial<CheckDraft>) => void;
+  onNoticeConfirm?: (notice: EligibilityNoticeExtraction) => void;
   onAdultChange: (index: AdultIndex, patch: Partial<AdultDraft>) => void;
 };
 
