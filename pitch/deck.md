@@ -204,7 +204,7 @@ Do not say "retainer" or "ask the client to hold a check": invoice timing covers
 
 ## B. Claims and placeholders still open
 
-- `[LIVE URL]`, `https://github.com/batyrkhanz015/cliffguard`, `[TEAM NAMES]`, `[ASK]`: not yet known.
+- `[LIVE URL]`, `[TEAM NAMES]`, `[ASK]`: not yet known.
 - `[QUOTE 1-3 from research/quotes.md]`: file absent. The three quotes used on slide 3 are sourced from `research/track-01-money.md` (KFF Health News, ObamacareFacts), not Reddit.
 - Screenshots in `docs/screenshots/` not present when this deck was written.
 - Unsourced (assumptions, labelled on slides): CAC by channel, renewal 55%, 8% paying, 1.7 people per household, Income Guard payers and price, B2B2C seats, 1099-earner pool (needs a BLS/Upwork cite), 2026 thresholds for each Income Guard cliff.
