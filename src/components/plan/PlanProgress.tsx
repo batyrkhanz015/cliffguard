@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { LeverId } from '@/engine';
 import { sendJson } from '@/lib/api';
+import type { PlanCoordinator } from '@/lib/planCoordinator';
 import type { HouseholdRecord } from '@/server/household';
 
 type ProgressMap = HouseholdRecord['planProgress'];
@@ -15,31 +16,31 @@ type ProgressContext = {
 };
 const Context = createContext<ProgressContext | null>(null);
 
-/** One synchronous lock for the entire panel: T6 progress writes the full household record. */
-export function PlanProgress({ initial, children }: { initial: ProgressMap; children: ReactNode }) {
+/** The coordinator belongs to PlanAccess and survives this provider's refresh-driven remounts. */
+export function PlanProgress({ initial, children, coordinator }: {
+  initial: ProgressMap; children: ReactNode; coordinator: PlanCoordinator;
+}) {
   const [progress, setProgress] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<ProgressContext['status']>({});
-  const lock = useRef(false);
 
   async function save(leverId: LeverId, next: Progress) {
-    if (lock.current) return;
-    lock.current = true;
-    setSaving(true);
-    setStatus((current) => ({ ...current, [leverId]: 'Saving…' }));
-    try {
-      const result = await sendJson('PATCH', '/api/plan/progress', { leverId, done: next.done, proofsChecked: next.proofsChecked });
-      if (result.ok) {
-        setProgress((current) => ({ ...current, [leverId]: next }));
-        setStatus((current) => ({ ...current, [leverId]: 'Saved' }));
-      } else {
-        const message = result.code === 'NOT_ENTITLED' ? 'Access has expired. Unlock the plan again.' : 'Could not save. Your previous checkmarks are kept. Try again.';
-        setStatus((current) => ({ ...current, [leverId]: message }));
+    await coordinator.mutate(async () => {
+      setSaving(true);
+      setStatus((current) => ({ ...current, [leverId]: 'Saving…' }));
+      try {
+        const result = await sendJson('PATCH', '/api/plan/progress', { leverId, done: next.done, proofsChecked: next.proofsChecked });
+        if (result.ok) {
+          setProgress((current) => ({ ...current, [leverId]: next }));
+          setStatus((current) => ({ ...current, [leverId]: 'Saved' }));
+        } else {
+          const message = result.code === 'NOT_ENTITLED' ? 'Access has expired. Unlock the plan again.' : 'Could not save. Your previous checkmarks are kept. Try again.';
+          setStatus((current) => ({ ...current, [leverId]: message }));
+        }
+      } finally {
+        setSaving(false);
       }
-    } finally {
-      lock.current = false;
-      setSaving(false);
-    }
+    });
   }
 
   return <Context value={{ progress, saving, status, save }}>{children}</Context>;
