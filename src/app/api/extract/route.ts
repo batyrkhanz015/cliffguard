@@ -3,6 +3,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { extractNotice } from '@/server/claude/extract';
 import { ApiError } from '@/server/errors';
+import { requireSameOrigin } from '@/server/origin';
 import { limit } from '@/server/ratelimit';
 import { clientIp, route } from '@/server/route';
 import { getSid } from '@/server/session';
@@ -15,8 +16,7 @@ const MANUAL_FALLBACK = "Couldn't read it. Enter the numbers below.";
 /** Documents are held only in this request's memory; extraction never loads or saves a household. */
 export const POST = route(async (request) => {
   try {
-    const origin = request.headers.get('origin');
-    if (origin !== null && origin !== new URL(request.url).origin) throw new ApiError('VALIDATION', 400, 'Upload your notice from this site.');
+    requireSameOrigin(request, 'Upload your notice from this site.');
     const sid = await getSid();
     const limits = await Promise.all([
       limit('extractSession', sid, 3, 3600),

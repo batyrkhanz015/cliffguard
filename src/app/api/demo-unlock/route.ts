@@ -1,5 +1,6 @@
 import { demoUnlockEnabled, DemoProductSchema, grantDemoAccess } from '@/server/entitlement';
 import { ApiError } from '@/server/errors';
+import { requireSameOrigin } from '@/server/origin';
 import { requireHousehold, saveHousehold } from '@/server/household';
 import { limit } from '@/server/ratelimit';
 import { readJson, route } from '@/server/route';
@@ -7,10 +8,7 @@ import { getSid } from '@/server/session';
 
 /** Public, explicitly enabled demo access. No sid, price, payment token or dates are client-controlled. */
 export const POST = route(async (request) => {
-  const origin = request.headers.get('origin');
-  if (origin !== null && origin !== new URL(request.url).origin) {
-    throw new ApiError('VALIDATION', 400, 'Open the demo from this site to unlock it.');
-  }
+  requireSameOrigin(request, 'Open the demo from this site to unlock it.');
   const { product } = await readJson(request, DemoProductSchema);
   const sid = await getSid();
   const { ok, retryAfterSec } = await limit('demoUnlock', sid, 10, 3600);

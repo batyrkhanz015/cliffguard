@@ -3,6 +3,7 @@ import { claudeAvailable } from '@/server/claude/client';
 import { calculationExplanation, explainPlan, explanationPlanHash, validateExplanation } from '@/server/claude/explain';
 import { todayAsOf } from '@/server/clock';
 import { ApiError } from '@/server/errors';
+import { requireSameOrigin } from '@/server/origin';
 import { isEntitled, requireHousehold } from '@/server/household';
 import { planExport } from '@/server/planAccess';
 import { limit } from '@/server/ratelimit';
@@ -11,8 +12,7 @@ import { getSid } from '@/server/session';
 import { store } from '@/server/store';
 
 export const POST = route(async (request) => {
-  const origin = request.headers.get('origin');
-  if (origin !== null && origin !== new URL(request.url).origin) throw new ApiError('VALIDATION', 400, 'Open your plan from this site.');
+  requireSameOrigin(request, 'Open your plan from this site.');
   await readJson(request, z.strictObject({}));
   const sid = await getSid();
   const readPlan = async () => {
