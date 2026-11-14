@@ -38,7 +38,6 @@ export function ExtraIncomeSlider({ extra, onChange, scenario }: ExtraIncomeSlid
         <span>{usd(EXTRA_INCOME_MAX)}</span>
       </div>
       <p
-        role="status"
         className={`mt-3 text-lg font-semibold ${over ? 'text-cliff-strong' : 'text-gray-950'}`}
       >
         {extra === 0

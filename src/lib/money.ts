@@ -60,3 +60,8 @@ export function formatMoney(amount: number, opts: { cents?: boolean } = {}): str
 export function formatMoneyInput(amount: number): string {
   return (Number.isInteger(amount) ? INPUT_WHOLE : INPUT_CENTS).format(amount);
 }
+
+/** "Over 400%" when the engine reports the over-the-cliff sentinel. */
+export function fplLabel(fplPercent: number): string {
+  return fplPercent > 400 ? 'Over 400%' : `${fplPercent}%`;
+}
