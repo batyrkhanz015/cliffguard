@@ -45,14 +45,21 @@ export function withStoreErrors(inner: Store): Store {
   };
 }
 
-type Env = Partial<Record<'UPSTASH_REDIS_REST_URL' | 'UPSTASH_REDIS_REST_TOKEN' | 'NODE_ENV', string>>;
+type Env = Partial<
+  Record<'UPSTASH_REDIS_REST_URL' | 'UPSTASH_REDIS_REST_TOKEN' | 'KV_REST_API_URL' | 'KV_REST_API_TOKEN' | 'NODE_ENV', string>
+>;
 export type Backend = { kind: 'upstash'; redis: Redis } | { kind: 'memory' } | { kind: 'unavailable' };
 
 /** Global Constraints: Upstash when configured; in-memory only outside production. */
 export function backendFor(env: Env): Backend {
-  const url = env.UPSTASH_REDIS_REST_URL;
-  const token = env.UPSTASH_REDIS_REST_TOKEN;
-  if (url && token) return { kind: 'upstash', redis: new Redis({ url, token }) };
+  // The Vercel Marketplace integration injects KV_REST_API_*; a pair is used only when complete.
+  const pair =
+    env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN
+      ? { url: env.UPSTASH_REDIS_REST_URL, token: env.UPSTASH_REDIS_REST_TOKEN }
+      : env.KV_REST_API_URL && env.KV_REST_API_TOKEN
+        ? { url: env.KV_REST_API_URL, token: env.KV_REST_API_TOKEN }
+        : null;
+  if (pair) return { kind: 'upstash', redis: new Redis(pair) };
   return env.NODE_ENV === 'production' ? { kind: 'unavailable' } : { kind: 'memory' };
 }
 
