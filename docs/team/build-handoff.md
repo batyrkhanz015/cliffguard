@@ -1,17 +1,16 @@
 # Build handoff: resume here after `/clear`
 
-> **For the next Claude session (the orchestrator):** read this, then `CLAUDE.md`, then the ledger at `.superpowers/sdd/plan/progress.md`. Trust `git log` and the ledger over memory. Updated 04:25 on Nov 15, 2026 (+05). Hackathon deadline: **12:00 on Nov 15**; internal submit **11:00**.
+> **For the next Claude session (the orchestrator):** read this, then `CLAUDE.md`, then the ledger at `.superpowers/sdd/plan/progress.md`. Trust `git log` and the ledger over memory. Updated 06:00 on Nov 15, 2026 (+05). Hackathon deadline: **12:00 on Nov 15**; internal submit **11:00**.
 
 ## 1. Where things stand
 - **Product:** CliffGuard, "Take the gig. Keep your health subsidy." It is an ACA subsidy-cliff rescue planner for variable earners. Idea and decisions: `docs/handoff.md`. Approved spec: `docs/spec.md`. Build plan: `docs/plan.md` (13 tasks, read its "G2 judge changes" section). Pitch plan: `docs/pitch-handoff.md`.
 - **Repo:** local `/Users/batyrhanzharov/Desktop/business-cup-zimran`, working branch **`v1`**. **Private** GitHub: https://github.com/batyrkhanz015/cliffguard. Captain 00:00: push every reviewed checkpoint to `v1` and fast-forward `main` to it; teammate `ggoku13` works from GitHub issues (label `teammate`), branches off `v1`, PRs into `v1`.
 
-**Orchestrator status — 04:25 Nov 15 (read this first):**
-- `v1` = `main` = e88b7dc on GitHub: T1–T6 + Codex's T8–T11 (PR #6 merged by fast-forward). Local checks green: lint, typecheck, 523 tests, build.
-- **In flight:** (a) T6 fix round 1 (Upstash errors → 503, IP caps on sample/PUT) on `v1`; (b) **T7 phase 2** in worktree `.claude/worktrees/agent-a880b0e70bc4c895e` (branch `worktree-agent-a880b0e70bc4c895e`): `/result` + `/plan` pages integrated with Codex's `PlanAccess` (see `demo-access.md` "T7 merge points"); report at `<worktree>/.superpowers/sdd/plan/task-7-report-phase2.md`.
-- **Queued:** Codex fix round — brief at `.superpowers/sdd/plan/codex-fix-brief.md` (grounding exact match, explain IP cap, max_tokens 4000, no-store into route(), split one-liners, Rescue date from rules). Dispatch after the T6 fix commits (both touch `src/server/route.ts`).
-- **Then:** review T7 → merge worktree into `v1` → G3 on localhost with `DEMO_UNLOCK_ENABLED=true` → captain approves → Vercel deploy (needs Upstash env + `DEMO_UNLOCK_ENABLED=true`) → T13 (README, states, phone) → judge G4 → deck.
-- Teammate `ggoku13` issues: #1 start, #2 quotes, #3 UI polish (rebase on new v1), #4 repurposed to calendar/check-in verification, #5 manual QA.
+**Orchestrator status — 06:00 Nov 15 (read this first):**
+- Done and reviewed: T1–T7, Codex T8–T11 (+ fix round), T6 fix round, README, G3 QA (`docs/qa.md`, no blockers), judge G3 6.88 (`docs/scores.md`), deck draft (`pitch/deck.md`), screenshots (`docs/screenshots/`).
+- T13 polish merged locally into `v1` (adbbc4a); **fix round 1 in flight** (footer must read exactly the required line; demo-access.md path; check-in empty-state label). Push v1+main after its re-review.
+- **Waiting on captain:** deploy approval → `vercel` project create/link → captain connects Upstash (Vercel Storage; store accepts `UPSTASH_REDIS_REST_*` or `KV_REST_API_*`) → env `DEMO_UNLOCK_ENABLED=true`, `APP_URL`, optional `ANTHROPIC_API_KEY` → `vercel --prod` → qa-tester on the live URL → README/deck `[LIVE URL]` → judge G4 → make repo public (captain's word) → submit by 11:00.
+- Local G3 server: `npm run dev` on :3000 with git-ignored `.env.local` (`DEMO_UNLOCK_ENABLED=true`). Screenshot script: scratchpad `shots/shoot.mjs` (puppeteer-core + system Chrome).
 
 **Codex handoff update — Nov 15:** T8–T11 work is on branch `codex/t8-t9`, prepared for GitHub handoff at the user's request. Start with [codex-handoff.md](codex-handoff.md) for completed features, local setup and integration steps. The local preview is `http://127.0.0.1:3002`. This branch has not been merged into the other LLM's active `v1` checkout. The older handoff instructions below remain historical context; use this status and the feature integration notes for completed work.
 
