@@ -115,7 +115,7 @@ The tables encode 2026 rules: no repayment cap, the 400% cliff, and bronze/catas
 ```sh
 npm i
 npm run dev        # http://localhost:3000
-npm test           # 537 tests across 39 files
+npm test           # 553 tests across 45 files
 npm run lint && npm run typecheck
 ```
 

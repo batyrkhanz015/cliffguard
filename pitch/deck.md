@@ -96,7 +96,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 
 ## Slide 6. A tested tax engine does the math. AI only reads and explains
 
-- Deterministic engine follows the IRS Form 8962 method. **547 unit tests**, including KFF ($745 and $34,463), Morkel ($3,512; $7,294 vs $3,289) and the IRS 2026 draft Form 8962 examples.
+- Deterministic engine follows the IRS Form 8962 method. **553 unit tests**, including KFF ($745 and $34,463), Morkel ($3,512; $7,294 vs $3,289) and the IRS 2026 draft Form 8962 examples.
 - **Claude's job:** read the user's HealthCare.gov eligibility notice (the user confirms the numbers) and explain the plan. A grounding validator blocks any number Claude did not get from the engine.
 - Plan amounts are redacted server-side until unlock. The engine never outputs an income estimate below the projection (unit-tested).
 - Privacy: no names or SSNs. Uploads are processed in memory, never stored. "Delete my data" is one click.
@@ -171,7 +171,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 ## Slide 10. Try it now, no login. Free diagnosis, $79 to keep watching
 
 - **Live:** [LIVE URL] (QR code). Click **Try Dani's family**. Phone-width tested.
-- **Repo:** [GITHUB URL]. Engine, 547 tests, README with architecture. Built in 24 hours with a 7-agent Claude Code team (researcher, strategist, judge, builder, code reviewer, QA, pitch writer). See `CLAUDE.md`.
+- **Repo:** [GITHUB URL]. Engine, 553 tests, README with architecture. Built in 24 hours with a 7-agent Claude Code team (researcher, strategist, judge, builder, code reviewer, QA, pitch writer). See `CLAUDE.md`.
 - **Why now:** 2026 is the first tax year with an uncapped cliff. Dec 31 ends the cheapest moves, open enrollment runs to Jan 15, and the first uncapped returns land Feb-Apr 2027.
 - **Next:** Stripe checkout live, the Reddit-quote evidence, then the first 2027-season SEO pages. Ask: `[ASK: feedback / pilot CPAs / intros to freelancer communities]`.
 - Team: `[TEAM NAMES]`
@@ -209,6 +209,6 @@ Do not say "retainer" or "ask the client to hold a check": invoice timing covers
 - Screenshots in `docs/screenshots/` not present when this deck was written.
 - Unsourced (assumptions, labelled on slides): CAC by channel, renewal 55%, 8% paying, 1.7 people per household, Income Guard payers and price, B2B2C seats, 1099-earner pool (needs a BLS/Upwork cite), 2026 thresholds for each Income Guard cliff.
 - Ranked competitor funding (Stride $47M, Instead $15M) is in `research/track-01-money.md` but not shown on slides.
-- "547 tests": README currently says 537; confirm before export.
+- "553 tests": README currently says 537; confirm before export.
 - Dani's figures for "$128,599 vs $128,601" repayment ($2,350 vs $9,342) from the handoff are not used; the deck uses $1,697 and $9,342 from the spec.
 - Spec s8 still lists LTV ~$134, 3.8x, and ACA wedge 250k payers x $79 = $20M, which exceeds the $12-17M ceiling. The deck uses the handoff's $137, 3.9x and 200k payers.
