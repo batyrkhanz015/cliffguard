@@ -31,3 +31,6 @@ coverage/
 
 # superpowers SDD scratch
 .superpowers/
+
+# agent worktrees (local scratch copies)
+.claude/worktrees/

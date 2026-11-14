@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Agent worktrees (local scratch copies of the repo):
+    ".claude/worktrees/**",
+    ".superpowers/**",
   ]),
 ]);
 
