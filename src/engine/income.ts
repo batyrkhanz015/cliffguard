@@ -13,6 +13,7 @@ export type IncomeBreakdown = {
   seProfitByAdult: Record<AdultId, number>;
   seTaxByAdult: Record<AdultId, number>;
   halfSeTax: number;
+  wagesByAdult: Record<AdultId, number>;
   wages: number;
   capGainsAllowed: number;
   agi: number;
@@ -62,7 +63,7 @@ export function computeIncome(
   const seAdult = pickSeAdult(input.adults);
   const seProfitByAdult: Record<AdultId, number> = { a: 0, b: 0 };
   const seTaxByAdult: Record<AdultId, number> = { a: 0, b: 0 };
-  let wages = 0;
+  const wagesByAdult: Record<AdultId, number> = { a: 0, b: 0 };
 
   for (const adult of input.adults) {
     const isSeAdult = adult.id === seAdult;
@@ -74,10 +75,11 @@ export function computeIncome(
     const adultWages = projected(adult.wages) + (isSeAdult ? (extra.wages ?? 0) : 0);
     seProfitByAdult[adult.id] = seProfit;
     seTaxByAdult[adult.id] = seTax(seProfit, adultWages, rules.se);
-    wages += adultWages;
+    wagesByAdult[adult.id] = adultWages;
   }
 
   const { investments, adjustments } = input;
+  const wages = wagesByAdult.a + wagesByAdult.b;
   const halfSeTax = (seTaxByAdult.a + seTaxByAdult.b) * rules.se.deductibleShare;
   const capGainsAllowed = Math.max(
     investments.capitalGainsNet + (extra.capitalGains ?? 0) - levers.delayStockSale,
@@ -102,6 +104,7 @@ export function computeIncome(
     seProfitByAdult,
     seTaxByAdult,
     halfSeTax,
+    wagesByAdult,
     wages,
     capGainsAllowed,
     agi,

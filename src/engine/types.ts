@@ -143,6 +143,50 @@ export type FlagCode =
   | 'IRA_SEP_COMBO_EXCLUDED'
   | 'NEAR_CLIFF_STEP';
 
+/** Where the money goes; `locked` is retirement money, never used when "Keep my cash" is on. */
+export type Liquidity = 'arrives_january' | 'planned_purchase' | 'mostly_liquid' | 'stays_invested' | 'locked';
+
+/** One step of a rescue plan (spec §A.6). The text fields are static copy from `levers.ts`. */
+export type Move = {
+  leverId: LeverId;
+  /** Set for the traditional IRA (per adult) and the SEP-IRA (the SE adult). */
+  adultId?: AdultId;
+  /** A multiple of $10. */
+  amount: number;
+  magiReduction: number;
+  /** ISO date. */
+  deadline: string;
+  liquidity: Liquidity;
+  howTo: string[];
+  returnLocation: string;
+  proof: string[];
+  warnings: string[];
+};
+
+export type PlanVerdict = 'under_line' | 'worth_it' | 'costly' | 'needs_retirement_moves' | 'not_worth_fighting';
+
+/** The optimizer's result (spec §A.6), plus the plan flags (G2: IRA_SEP_COMBO_EXCLUDED). */
+export type PlanResult = {
+  verdict: PlanVerdict;
+  /** The cliff minus the safety buffer. */
+  target: number;
+  magiBefore: number;
+  magiAfter: number;
+  ptcBefore: number;
+  ptcAfter: number;
+  repaymentBefore: number;
+  repaymentAfter: number;
+  /** Empty unless the plan gets under the target. */
+  moves: Move[];
+  totals: { cashCommitted: number; lockedInRetirement: number; deferredToNextYear: number; incomeTaxSaved: number };
+  /** MAGI reduction if every allowed lever is used to capacity. */
+  maxReductionAvailable: number;
+  /** The repayment to set aside when the cliff is out of reach (`not_worth_fighting`). */
+  setAside: number | null;
+  suggestion: 'allow_retirement_moves' | null;
+  flags: FlagCode[];
+};
+
 export type EngineErrorCode =
   | 'FILING_STATUS_UNSUPPORTED'
   | 'SLCSP_REQUIRED'

@@ -25,6 +25,21 @@ export const F1 = {
   daysToYearEnd: 47,
 } as const;
 
+/** Spec §B F3 / F4 / F9 / F10: Dani + a $12k gig and the rescue plans. */
+export const F3 = {
+  magiWithGig: 133_188,
+  invoiceTiming: 3_000,
+  businessPurchases: 1_800,
+  hsa: 1_130,
+  magiAfter: 127_597,
+  repaymentAfter: 2_251,
+  /** F4 / F9 / F10: one 1:1 lever lowers MAGI by 5,590 to 127,598. */
+  oneToOneMove: 5_590,
+  oneToOneMagiAfter: 127_598,
+  sepCapacity: 19_238,
+  sepIncomeTaxSaved: 671,
+} as const;
+
 /** Dani's reconciliation inputs at F1, with the F1 benchmark; tests vary `magi` (F2). */
 export const DANI_RECONCILE: ReconcileInput = {
   magi: F1.magi,
