@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { Paywall } from './Paywall';
 import { UnlockedMove } from './UnlockedMove';
 import { PlanProgress } from './PlanProgress';
+import { ExplainMyPlan } from './ExplainMyPlan';
 
 type State = { kind: 'loading' } | { kind: 'ready'; data: PlanAccessData; revision: number } | { kind: 'error'; missing: boolean };
 
@@ -87,6 +88,7 @@ export function PlanAccess() {
             <h3 className="text-lg font-bold">{state.data.plan.verdict === 'under_line' ? 'You’re under the line. No rescue needed.' : 'No actionable moves in this plan.'}</h3>
             <p className="mt-2 text-sm">{state.data.plan.verdict === 'under_line' ? 'Keep monitoring your projected income and Marketplace estimate as work comes in.' : 'Review the preview’s eligibility reasons and cash preference. Your preparer can help assess other options.'}</p>
           </Card>}
+          <ExplainMyPlan key={state.revision} />
           <PlanProgress key={state.revision} initial={state.data.progress} coordinator={coordinator}>
             {state.data.plan.moves.map((move) => !move.locked && <UnlockedMove key={`${move.leverId}-${move.adultId ?? 'household'}`} move={move} />)}
           </PlanProgress>

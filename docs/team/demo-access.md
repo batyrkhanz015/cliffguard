@@ -31,6 +31,16 @@ T6 currently reads and writes entire household records without compare-and-set. 
 
 ## Deferred scope and verification
 
-Real Stripe, checkout success/cancel flows, Claude explanation/Q&A, check-ins and calendar downloads are not implemented by T8's demo-access work. No push or deployment is required for this integration.
+Real Stripe, checkout success/cancel flows, Q&A, check-ins and calendar downloads remain deferred beyond this integration. No push or deployment is required for this integration.
 
 Run `npm run lint`, `npm run typecheck`, and `npm test`. Added coverage checks flag eligibility, request validation, rate limiting, entitlement idempotence/upgrades, redaction, identity omission, saved preferences/gig preservation and move-based export reconciliation. A local real-HTTP check covered sample → locked plan → Rescue grant → full plan → saved proof → printable export → Year upgrade. The connected browser was unavailable during implementation, so 375px visual, interactive and print-preview QA remain for review.
+
+## T10 explanation integration
+
+The entitled `/unlock` and `/plan` access panel now includes **Explain my plan**. Without an API key, or when Claude is disabled or unavailable, it returns the real deterministic engine template, expanded to three paragraphs and labeled **Calculation-based explanation**. Set `ANTHROPIC_API_KEY` and restart to enable live explanations; no-key templates never enter the live cache. `CLAUDE_ENABLED=false` forces template mode. The existing `CLAUDE_DAILY_CALL_CAP` controls provider calls, including grounding retries, and forces template mode at exhaustion even for cache hits.
+
+`POST /api/explain` accepts only `{}`, checks active Rescue or Year access, and uses `planExport` to compute exactly the saved gig and preferences. It allows ten requests per hour per session, including cached/template reads. Valid provider explanations are cached for 24 hours under the session and a SHA-256 hash of the complete diagnosis and plan. The route rechecks access and the calculation hash before disclosure. No household record, session identity, upload, or extraction evidence is passed to Claude.
+
+The SDK receives structured output generated from the existing explanation schema, with a 900-token cap. Invalid schemas or move IDs fall back. A numeric grounding failure gets at most one retry within the same 15-second deadline. Text is rendered as plain React text. The component remounts on the access panel's read revision and immediately invalidates on plan-change events, including while the parent's mutation coordinator waits for a proof save.
+
+Tests use the installed real SDK with a fake transport, so the implementation suite makes no paid calls. Live output quality, mobile browser layout and interaction remain unverified until those environments are available.
