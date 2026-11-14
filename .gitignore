@@ -4,6 +4,8 @@ node_modules/
 # next.js / build output
 .next/
 out/
+/build
+next-env.d.ts
 coverage/
 *.tsbuildinfo
 
@@ -13,6 +15,9 @@ coverage/
 
 # vercel
 .vercel
+
+# private keys
+*.pem
 
 # os / editor
 .DS_Store
