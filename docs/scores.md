@@ -293,3 +293,67 @@ Omitted, no fixture impact: Additional Medicare Tax (0.9% over $250k MFJ), and t
 - The ustax.tools page (403).
 - Whether OBBBA changed QBI thresholds for 2026 (not in the research file; irrelevant for Dani).
 - Congressional action after Nov 5, 2026.
+
+
+---
+
+## G3 — integrated v1 on localhost (2026-11-15, early morning)
+
+**What was judged:** branch v1 on localhost, via docs/qa.md (G3 walk), README, spec and code signals. src has 1 `any`-pattern hit (a test file) and no TODO/FIXME. 547 tests were reported passing. I did not run the live product myself. There is **no production URL, no deck, and no screenshots** (docs/screenshots and pitch/ are empty, while the README links 6 images that do not exist).
+
+### Score table
+
+| Criterion | Weight | G2 | **G3** |
+|---|---|---|---|
+| Works | 40% | 8.5 (spec) | **7.0** |
+| Sell | 20% | 7.0 | **7.0** |
+| Who | 15% | 8.5 | **7.5** |
+| Money | 15% | 6.0 | **5.5** |
+| New | 10% | 6.5 | **6.5** |
+| **Weighted** | | 7.63 | **6.88** |
+
+G2 scored the spec as promised. G3 scores what is submittable today. The 7.0 for Works assumes a production deploy. If no production URL exists at submit, Works is capped near 2 and the total drops to about 4.7.
+
+### Evidence and objections per criterion
+
+- **Works (7.0).**
+  - Pro: the jury path ran end to end on localhost with figures matching the spec fixtures (MAGI $122,036; $1,321 vs $8,548; loss zone $7,064 to $10,232). Validation, delete-my-data, phone width and the return banner work. The engine is deterministic and heavily tested, and plan amounts are redacted server-side.
+  - Con: **not in production**, and the jury cannot use localhost. A Major bug (duplicate keys and a doubled Explain panel) hits exactly the "paid feature unlocks" moment. Stripe was replaced by a free demo unlock, so checkout is never shown and the 4242 hint is missing. Without a live Claude key the AI is a labelled template, which a juror reads as "no AI". The gig headline excludes QBI (labelled "rough"). Delete has no confirm, tap targets are small, and the README screenshot links are broken.
+- **Sell (7.0).**
+  - Pro: "should I take this gig" with a red loss zone is sharper than a calculator. Check-in, .ics and the Jan 15 estimate are real return hooks.
+  - Con: a free unlock beside a $79 price means the juror never feels what they would pay for. The paywall still gates numbers derived from the user's own inputs. Monthly check-ins for a once-a-year tax event can look manufactured.
+- **Who (7.5).** Dani, the dated trigger and the IRS/KFF/Morkel reproductions are strong. There are still **zero user-voice quotes** (Reddit is issue #2), and no juror buys Marketplace coverage. Down from 8.5 because the gap is still open at the end of the clock.
+- **Money (5.5).** The honest $12-17M ACA ceiling sits in a shrinking market (22.4M enrollees to a CBO-projected 13.1M). The $100M rests on expansion that is not built. I did not verify that the G2 fixes R4 (LTV about $137) and R5 (the $20M vs ceiling contradiction) landed in spec section 8. Policy-reversal risk is only partly answered, and no CAC channel is proven.
+- **New (6.5).** Free rivals: StateCalc (uncapped 2026), Tax47 (HSA under 400%), healthinsurance.org, NerdWallet, KFF, Instead blog, beancount.io. We differ in the gig decision, the loss zone, the ordered optimizer and the notice intake. That is distinct, but a juror can still say "a calculator with a plan page".
+
+### G2 objections: answered?
+
+- Cuts and sequencing (Q&A, extraction deferral): yes.
+- Number fixes (R1, R2, T1-T5, IRS vectors): the README cites the IRS truncation and applicable-figure tests, so they appear followed. I did not re-verify each.
+- QBI: **not fixed**, only labelled.
+- Money rewrite (R4, R5): unverified.
+- Retention built into the product: yes.
+- Reddit quotes: **not answered**.
+
+### Top 3 fixes, ranked by score gain per hour
+
+1. **Deploy to production and walk the jury path on the live URL (about 0.75h, needs captain approval). Impact: up to +2.5 weighted, because it lifts the cap on Works.**
+   - Set the Upstash vars, DEMO_UNLOCK_ENABLED=true and ANTHROPIC_API_KEY. Test at phone width, plus live notice extraction and Explain.
+   - A live key turns the template explanation into real AI (Works about +0.3).
+   - Verify first that sessions persist: the in-memory fallback vanishes between serverless invocations.
+2. **Fix the Major bug and the quick polish (about 0.5h; the polish builder is on it). Impact: about +0.15 weighted.**
+   - Dedupe the doubled panel after unlock. Add a confirm on Delete, 44px tap targets, a reason on disabled lever buttons, and stop the duplicate baseline row.
+   - Put a visible "demo: no card needed; test card would be 4242 4242 4242 4242" hint beside the unlock, or restore Stripe test mode only if it takes under 1h.
+3. **Evidence, screenshots and the deck (about 1.5h, humans in parallel). Impact: Who +1, Money +0.5, about +0.2 weighted, and the deck is a mandatory submission item.**
+   - A human pastes 3-5 real Reddit/forum quotes (issue #2) into the deck and README.
+   - Capture real screenshots (the README has 6 dead links) and write the 10-slide deck from spec sections 3-9 using the honest TAM.
+   - Add below-threshold QBI to the gig estimate (0.3h), or say "about $1,500 poorer".
+
+### What would embarrass us in front of the jury
+
+- No deck or no live URL at the deadline, or a README that says "Live app: TBD" with broken images.
+- "Unlock Year demo, free" next to $79, with no checkout, read as "payments don't work".
+- "CALCULATION-BASED EXPLANATION" with no live Claude, read as "no AI".
+- The doubled panel and console error right after the unlock moment.
+- A tax-savvy juror finding the QBI omission in the most-quoted number.
+- Sessions lost on serverless if Upstash is not configured.
