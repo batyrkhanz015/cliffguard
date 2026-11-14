@@ -1,6 +1,6 @@
 # CliffGuard: product spec (v1)
 
-> **Status:** **Approved by the captain at G2 (~19:50, 2026-11-14)**, with all of §H's recommended defaults accepted. Written by the strategist agent. Idea locked at G1 (18:15). v1 target: live by ~00:30, Nov 15.
+> **Status:** **Approved by the captain at G2 (~18:50, 2026-11-14)**, with all of §H's recommended defaults accepted. Written by the strategist agent. Idea locked at G1 (18:15). v1 target: live by ~00:30, Nov 15.
 > **Inputs:** `CLAUDE.md`, `docs/handoff.md`, `docs/scores.md` (G1), `research/track-01-money.md`, `research/new-rules-radar.md`, `research/niche-hunt.md`.
 > **Table values:** `research/tax-tables-2026.md` (a researcher is writing it in parallel) is the source of truth for every table number. Where this spec lists a value, it is the value the fixtures in §B were computed with. If the research file disagrees, the research file wins and the builder recomputes the affected fixtures and reports the delta.
 > **Education, not tax advice.** That rule covers the product, this spec and the pitch.

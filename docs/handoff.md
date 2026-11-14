@@ -139,7 +139,7 @@ Dani's counted income is projected at **$122,036**, and she's offered a **$12,00
 
 **The most striking number:** an **$8,000** gig with no plan leaves Dani **$1,668 poorer than saying no**.
 
-> *Correction (19:45, Nov 14):* an earlier version of this table assumed the 22% bracket and showed "keeps about $200". The engine spec recalculated it with the 12% bracket and the half-SE-tax deduction.
+> *Correction (18:45, Nov 14):* an earlier version of this table assumed the 22% bracket and showed "keeps about $200". The engine spec recalculated it with the 12% bracket and the half-SE-tax deduction.
 
 ---
 
