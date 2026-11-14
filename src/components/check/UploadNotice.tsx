@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
 import { Field, INPUT_CLASS } from '@/components/ui/Field';
@@ -9,7 +9,7 @@ import { NoticeRequests } from '@/lib/noticeRequests';
 import { ExtractionConfirmCard } from './ExtractionConfirmCard';
 
 const Reply = z.object({ extraction: EligibilityNoticeExtractionSchema, confirmed: z.literal(false) });
-type UploadState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'confirm'; extraction: EligibilityNoticeExtraction };
+type UploadState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string; canRetry: boolean } | { kind: 'confirm'; extraction: EligibilityNoticeExtraction };
 
 function failureMessage(code: unknown, retry: string | null): string {
   if (code === 'NOT_RECOGNIZED') return "This doesn't look like a Marketplace eligibility notice. Enter the numbers below.";
@@ -22,9 +22,19 @@ function failureMessage(code: unknown, retry: string | null): string {
   return "Couldn't read it. Enter the numbers below.";
 }
 
+function fileError(file: File): string | null {
+  if (file.size > 5 * 1024 * 1024) return failureMessage('FILE_TOO_LARGE', null);
+  if (file.size === 0 || !['application/pdf', 'image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+    return failureMessage('UNSUPPORTED_FILE_TYPE', null);
+  }
+  return null;
+}
+
 export function UploadNotice({ onConfirm }: { onConfirm: (extraction: EligibilityNoticeExtraction) => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [state, setState] = useState<UploadState>({ kind: 'idle' });
+  const [dragging, setDragging] = useState(false);
+  const dragDepth = useRef(0);
   const [requests] = useState(() => new NoticeRequests());
   const lastRequest = useRef<'file' | 'sample'>('file');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,12 +53,55 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
     setState({ kind: 'idle' });
   }
 
+  function chooseFiles(files: FileList | null): boolean {
+    requests.cancel();
+    lastRequest.current = 'file';
+    focusAfterCancel.current = false;
+    const selected = files?.[0] ?? null;
+    const error = files && files.length > 1
+      ? 'Choose one notice at a time. Drop a single PDF, PNG, JPEG or WebP file.'
+      : selected ? fileError(selected) : null;
+    if (error) {
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = '';
+      setState({ kind: 'error', message: error, canRetry: false });
+      return false;
+    }
+    setFile(selected);
+    setState({ kind: 'idle' });
+    return selected !== null;
+  }
+
+  function dragEnter(event: DragEvent<HTMLDivElement>) {
+    if (!event.dataTransfer.types.includes('Files')) return;
+    event.preventDefault();
+    if (state.kind === 'loading') return;
+    dragDepth.current += 1;
+    setDragging(true);
+  }
+
+  function dragLeave(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setDragging(false);
+  }
+
+  function drop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    if (state.kind === 'loading' || event.dataTransfer.files.length === 0) return;
+    const files = event.dataTransfer.files;
+    if (chooseFiles(files) && inputRef.current) inputRef.current.files = files;
+  }
+
   async function read(source: 'file' | 'sample') {
     requests.cancel();
     lastRequest.current = source;
-    if (source === 'file' && !file) { setState({ kind: 'error', message: 'Choose a notice first, or use the sample notice.' }); return; }
-    if (source === 'file' && file && (file.size > 5 * 1024 * 1024 || !['application/pdf', 'image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size === 0)) {
-      setState({ kind: 'error', message: failureMessage(file.size > 5 * 1024 * 1024 ? 'FILE_TOO_LARGE' : 'UNSUPPORTED_FILE_TYPE', null) }); return;
+    if (source === 'file' && !file) { setState({ kind: 'error', message: 'Choose a notice first, or use the sample notice.', canRetry: false }); return; }
+    const error = source === 'file' && file ? fileError(file) : null;
+    if (error) {
+      setState({ kind: 'error', message: error, canRetry: false }); return;
     }
     const controller = requests.begin();
     setState({ kind: 'loading' });
@@ -66,10 +119,10 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
       if (response.ok && parsed.success) setState({ kind: 'confirm', extraction: parsed.data.extraction });
       else {
         const failure = z.object({ error: z.object({ code: z.string() }) }).safeParse(raw);
-        setState({ kind: 'error', message: failureMessage(failure.success ? failure.data.error.code : null, response.headers.get('retry-after')) });
+        setState({ kind: 'error', message: failureMessage(failure.success ? failure.data.error.code : null, response.headers.get('retry-after')), canRetry: true });
       }
     } catch {
-      if (requests.isCurrent(controller)) setState({ kind: 'error', message: "Couldn't read it. Enter the numbers below." });
+      if (requests.isCurrent(controller)) setState({ kind: 'error', message: "Couldn't read it. Enter the numbers below.", canRetry: true });
     } finally {
       requests.finish(controller);
     }
@@ -79,16 +132,34 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
     <section aria-label="Read an eligibility notice" className="space-y-4 rounded-md border border-hairline p-4">
       <p className="font-semibold">Upload your eligibility notice</p>
       <p className="text-sm text-gray-600">Optional. PDF, PNG, JPEG or WebP, up to 5 MB. Your notice is sent to Claude to read; CliffGuard does not store the file. Only confirmed values are used in your form; numbers are saved after you finish the check. You can always enter them manually.</p>
-      <Field id="notice-file" label="Choose a notice">
-        <input ref={inputRef} id="notice-file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" disabled={state.kind === 'loading'} className={INPUT_CLASS}
-          onChange={(event) => { cancel(); setFile(event.target.files?.[0] ?? null); }} />
-      </Field>
+      <div
+        role="group"
+        aria-label="Notice upload drop area"
+        onDragEnter={dragEnter}
+        onDragLeave={dragLeave}
+        onDragOver={(event) => {
+          if (!event.dataTransfer.types.includes('Files')) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = state.kind === 'loading' ? 'none' : 'copy';
+        }}
+        onDrop={drop}
+        className={`rounded-md border-2 border-dashed p-5 transition-colors focus-within:border-violet ${dragging ? 'border-violet bg-violet/10' : 'border-gray-300 bg-white'} ${state.kind === 'loading' ? 'opacity-60' : ''}`}
+      >
+        <p id="notice-drop-hint" className="mb-4 text-center font-semibold text-gray-700">
+          {dragging ? 'Drop your notice here' : 'Drag and drop your notice here, or choose a file below'}
+        </p>
+        <Field id="notice-file" label="Choose a notice">
+          <input ref={inputRef} id="notice-file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" disabled={state.kind === 'loading'} className={INPUT_CLASS}
+            aria-describedby="notice-drop-hint"
+            onChange={(event) => { chooseFiles(event.target.files); }} />
+        </Field>
+      </div>
       <div className="flex flex-wrap gap-3">
         <Button variant="secondary" disabled={state.kind === 'loading' || !file} onClick={() => void read('file')}>Read notice</Button>
         <Button variant="quiet" disabled={state.kind === 'loading'} onClick={() => void read('sample')}>Use sample notice</Button>
       </div>
       {state.kind === 'loading' && <div role="status" aria-live="polite"><p>Reading your notice… usually 10–20 s</p><Button variant="quiet" onClick={cancel}>Cancel</Button></div>}
-      {state.kind === 'error' && <div role="alert" className="text-sm"><p>{state.message}</p><Button variant="quiet" onClick={() => void read(lastRequest.current)}>Retry</Button></div>}
+      {state.kind === 'error' && <div role="alert" className="text-sm"><p>{state.message}</p>{state.canRetry && <Button variant="quiet" onClick={() => void read(lastRequest.current)}>Retry</Button>}</div>}
       {state.kind === 'confirm' && <ExtractionConfirmCard extraction={state.extraction} onCancel={cancel} onConfirm={(notice) => { onConfirm(notice); cancel(); }} />}
     </section>
   );
