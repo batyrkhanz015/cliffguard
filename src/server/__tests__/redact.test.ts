@@ -43,7 +43,7 @@ describe('unlockPlan', () => {
 });
 
 describe('householdView', () => {
-  it('drops only the session id', () => {
+  it('omits private identity and exposes a non-secret household scope', () => {
     const record = replaceInput(null, {
       sid: crypto.randomUUID(),
       source: 'manual',
@@ -52,7 +52,9 @@ describe('householdView', () => {
     });
     const view = householdView(record);
     expect(view).not.toHaveProperty('sid');
-    expect({ ...view, sid: record.sid }).toStrictEqual(record);
+    expect(view).not.toHaveProperty('checkinIdentity');
+    const { checkinIdentity, ...publicRecord } = record;
+    expect({ ...view, sid: record.sid }).toStrictEqual({ ...publicRecord, householdScope: checkinIdentity });
   });
 });
 

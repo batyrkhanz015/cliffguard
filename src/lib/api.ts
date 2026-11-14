@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { notifyPlanChanged } from './planEvents';
+import { householdWriteSucceeded } from './checkinRetry';
 
 /** Browser-side JSON calls to our API routes, reading the spec §D error shape. */
 
@@ -41,6 +42,7 @@ export async function sendJson(method: 'POST' | 'PUT' | 'DELETE' | 'PATCH', url:
   }
   const payload: unknown = await response.json().catch(() => null);
   if (response.ok) {
+    if ((url === '/api/household' && (method === 'PUT' || method === 'DELETE')) || (url === '/api/household/sample' && method === 'POST')) householdWriteSucceeded(method, payload);
     if (url === '/api/plan' || url === '/api/gig-check') notifyPlanChanged();
     return { ok: true, data: payload };
   }

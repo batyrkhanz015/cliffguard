@@ -5,6 +5,7 @@ import { Button, buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import type { CheckinData, CheckinResult } from '@/lib/checkinView';
 import { notifyPlanChanged } from '@/lib/planEvents';
+import { HOUSEHOLD_CHANGED_EVENT, reconcilePendingCheckin } from '@/lib/checkinRetry';
 import { CheckinForm } from './CheckinForm';
 import { DeltaCard } from './DeltaCard';
 import { History } from './History';
@@ -21,10 +22,14 @@ export function CheckinPanel() {
       const response = await fetch('/api/checkin', { cache: 'no-store', signal: request.signal });
       if (!response.ok) throw new Error('Could not load');
       const data = await response.json() as CheckinData;
-      if (!request.signal.aborted) setState({ kind: 'loaded', data, revision });
+      if (!request.signal.aborted) { reconcilePendingCheckin(data.kind === 'empty' ? null : data.householdScope); setState({ kind: 'loaded', data, revision }); }
     } catch { if (!request.signal.aborted) setState({ kind: 'error' }); }
   }, []);
-  useEffect(() => { void refresh(); return () => { controller.current?.abort(); }; }, [refresh]);
+  useEffect(() => {
+    const changed = () => { setResult(null); setState({ kind: 'loading' }); void refresh(); };
+    void refresh(); window.addEventListener(HOUSEHOLD_CHANGED_EVENT, changed);
+    return () => { controller.current?.abort(); window.removeEventListener(HOUSEHOLD_CHANGED_EVENT, changed); };
+  }, [refresh]);
   return <div className="space-y-5">
     {state.kind === 'loading' && <Card><p role="status">Loading your check-in…</p></Card>}
     {state.kind === 'error' && <Card><p role="alert">Could not load your saved numbers.</p><Button className="mt-4" onClick={() => { setState({ kind: 'loading' }); void refresh(); }}>Try again</Button></Card>}

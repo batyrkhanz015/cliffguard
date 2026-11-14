@@ -34,7 +34,7 @@ describe('Year-only check-in routes', () => {
     expect((await estimate(request('/api/checkin/estimate', { expected2027: 100000 }))).status).toBe(404);
     for (const [product, validUntil] of [['rescue', '2027-11-15'], ['year', '2026-11-14']] as const) {
       await grant(product, validUntil);
-      const read = await GET(request()); expect(await read.json()).toEqual({ kind: 'locked' });
+      const read = await GET(request()); expect(await read.json()).toMatchObject({ kind: 'locked', householdScope: expect.any(String) });
       for (const response of [await POST(request('/api/checkin', body())), await calendar(request('/api/calendar.ics')), await estimate(request('/api/checkin/estimate', { expected2027: 100000 }))]) {
         expect(response.status).toBe(402); expect(response.headers.get('Cache-Control')).toBe('no-store');
       }

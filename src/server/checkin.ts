@@ -1,23 +1,12 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { AdultIdSchema, HouseholdInputSchema, computeAlerts, diagnose } from '@/engine';
+import { HouseholdInputSchema, computeAlerts, diagnose } from '@/engine';
 import { ApiError } from './errors';
 import { isEntitled, type HouseholdRecord } from './household';
 
-const Money = z.number().min(0).max(1_000_000_000);
-const ByAdult = z.partialRecord(AdultIdSchema, Money);
-export const CheckinBodySchema = z.strictObject({
-  requestId: z.string().regex(/^[A-Za-z0-9_-]{8,100}$/).optional(),
-  baselineVersion: z.iso.datetime().optional(),
-  received: z.strictObject({
-    seByAdult: ByAdult, wagesByAdult: ByAdult,
-    capitalGains: z.number().min(-1_000_000_000).max(1_000_000_000),
-    interestOrDividends: Money,
-  }),
-  expectedRestAfter: z.strictObject({ seByAdult: ByAdult, wagesByAdult: ByAdult }).optional(),
-});
-export type CheckinBody = z.infer<typeof CheckinBodySchema>;
+import { CheckinBodySchema, type CheckinBody } from '@/lib/checkinRequest';
+export { CheckinBodySchema, type CheckinBody } from '@/lib/checkinRequest';
 export type Checkin = HouseholdRecord['checkins'][number];
 
 export function requireYear(record: HouseholdRecord, asOf: string): void {

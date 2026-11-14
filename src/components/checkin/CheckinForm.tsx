@@ -6,29 +6,28 @@ import { MoneyInput } from '@/components/ui/MoneyInput';
 import { sendJson } from '@/lib/api';
 import type { CheckinReady, CheckinResult } from '@/lib/checkinView';
 import { parseMoney, parseSignedMoney } from '@/lib/money';
-import type { CheckinBody } from '@/server/checkin';
+import type { CheckinBody } from '@/lib/checkinRequest';
+import { clearPendingCheckin, readPendingCheckin, savePendingCheckin, subscribeCheckinInvalidation } from '@/lib/checkinRetry';
 
-const RETRY_KEY = 'cliffguard:pending-checkin:v1';
-function readPending(): CheckinBody | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const saved = sessionStorage.getItem(RETRY_KEY);
-    return saved ? JSON.parse(saved) as CheckinBody : null;
-  } catch { return null; }
-}
 /** An uncertain retry keeps its original amounts and ID, including across page reloads. */
 export function CheckinForm({ data, onSaved }: { data: CheckinReady; onSaved: (result: CheckinResult) => void }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [expected, setExpected] = useState<Record<string, string>>({});
-  const [recovered] = useState(readPending);
+  const [recovered] = useState(() => readPendingCheckin(data.householdScope));
   const [error, setError] = useState(recovered ? 'A previous check-in may have saved. Retry its original submission before entering more income.' : '');
   const [busy, setBusy] = useState(false);
   const [uncertain, setUncertain] = useState(recovered !== null);
   const pending = useRef<CheckinBody | null>(recovered); const controller = useRef<AbortController | null>(null);
-  useEffect(() => () => { controller.current?.abort(); }, []);
+  useEffect(() => {
+    const unsubscribe = subscribeCheckinInvalidation(data.householdScope, () => {
+      controller.current?.abort(); controller.current = null; pending.current = null;
+      setValues({}); setExpected({}); setUncertain(false); setBusy(false); setError('');
+    });
+    return () => { unsubscribe(); controller.current?.abort(); };
+  }, [data.householdScope]);
   function clearPending() {
     pending.current = null; setUncertain(false);
-    try { sessionStorage.removeItem(RETRY_KEY); } catch { /* Browser storage may be disabled. */ }
+    clearPendingCheckin(false);
   }
   function number(key: string, signed = false) { return (signed ? parseSignedMoney : parseMoney)(values[key] ?? '0'); }
   function remaining(key: string, old: number) { return expected[key] ?? String(Math.max(0, old - (number(key) ?? 0))); }
@@ -50,7 +49,7 @@ export function CheckinForm({ data, onSaved }: { data: CheckinReady; onSaved: (r
       received.capitalGains = capitalGains; received.interestOrDividends = interestOrDividends;
       body = { requestId: crypto.randomUUID(), baselineVersion: data.baselineVersion, received, expectedRestAfter: rest };
       pending.current = body;
-      try { sessionStorage.setItem(RETRY_KEY, JSON.stringify(body)); } catch { /* Keep the in-memory copy. */ }
+      savePendingCheckin(data.householdScope, body);
     }
     const request = new AbortController(); controller.current = request; setBusy(true); setError('');
     const response = await sendJson('POST', '/api/checkin', body, { signal: request.signal });

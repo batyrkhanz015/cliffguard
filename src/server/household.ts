@@ -85,6 +85,8 @@ export const HouseholdRecordSchema = z.object({
   version: z.literal(1),
   sid: z.uuid(),
   createdAt: z.iso.datetime(),
+  /** Rotates only when this session switches households; independent of session/grant IDs. */
+  checkinIdentity: z.uuid().optional(),
   updatedAt: z.iso.datetime(),
   source: HouseholdSourceSchema,
   input: HouseholdInputSchema,
@@ -143,6 +145,7 @@ export function replaceInput(existing: HouseholdRecord | null, change: InputChan
       version: 1,
       sid,
       createdAt: now,
+      checkinIdentity: crypto.randomUUID(),
       updatedAt: now,
       source,
       input,
@@ -158,7 +161,7 @@ export function replaceInput(existing: HouseholdRecord | null, change: InputChan
     updatedAt: now,
     source,
     input: { ...input, preferences: existing.input.preferences },
-    ...(changedHousehold ? { lastGig: null, planProgress: {}, checkins: [] } : {}),
+    ...(changedHousehold ? { checkinIdentity: crypto.randomUUID(), lastGig: null, planProgress: {}, checkins: [] } : {}),
   };
 }
 

@@ -8,6 +8,7 @@ import { limit } from '@/server/ratelimit';
 import { publicCheckin } from '@/server/redact';
 import { readJson, route } from '@/server/route';
 import { getSid } from '@/server/session';
+import { householdScope } from '@/lib/householdScope';
 
 function privateRoute(handler: (request: Request) => Promise<Response>) {
   const wrapped = route(handler);
@@ -19,9 +20,9 @@ export const GET = privateRoute(async () => {
   const record = await loadHousehold(await getSid());
   if (!record) return Response.json({ kind: 'empty' });
   const asOf = todayAsOf();
-  if (record.entitlement?.product !== 'year' || record.entitlement.validUntil < asOf) return Response.json({ kind: 'locked' });
+  if (record.entitlement?.product !== 'year' || record.entitlement.validUntil < asOf) return Response.json({ kind: 'locked', householdScope: householdScope(record) });
   const latest = record.checkins.at(-1);
-  return Response.json({ kind: 'ready', asOf, baselineVersion: record.updatedAt, since: latest?.asOf ?? record.createdAt.slice(0, 10),
+  return Response.json({ kind: 'ready', householdScope: householdScope(record), asOf, baselineVersion: record.updatedAt, since: latest?.asOf ?? record.createdAt.slice(0, 10),
     adults: record.input.adults.map(adult => ({ id: adult.id, label: adult.label, seExpected: adult.selfEmploymentProfit.expectedRest, wagesExpected: adult.wages.expectedRest })),
     diagnosis: diagnose(record.input, { gig: null, asOf }), history: record.checkins.map(publicCheckin), schedule: checkinSchedule(asOf, latest?.asOf),
   });

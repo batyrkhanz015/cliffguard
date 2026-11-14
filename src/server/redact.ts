@@ -5,6 +5,7 @@ import type { GigCheckView, LockedMove, PlanSummary, PlanView, UnlockedPlan } fr
 import type { HouseholdRecord } from './household';
 import type { CheckinView } from '@/lib/checkinView';
 import { todayAsOf } from './clock';
+import { householdScope } from '@/lib/householdScope';
 
 /** What the browser may see of the server's results (spec §D). Pure functions. */
 
@@ -45,7 +46,8 @@ export const gigCheckView = (gig: GigCheckResult, entitled: boolean): GigCheckVi
   plan: planView(gig.plan, entitled),
 });
 
-export type HouseholdView = Omit<HouseholdRecord, 'sid' | 'checkins' | 'entitlement'> & {
+export type HouseholdView = Omit<HouseholdRecord, 'sid' | 'checkins' | 'entitlement' | 'checkinIdentity'> & {
+  householdScope: string;
   checkins: CheckinView[];
   entitlement: { product: 'rescue' | 'year'; validUntil: string } | null;
 };
@@ -59,6 +61,7 @@ export function publicCheckin(checkin: HouseholdRecord['checkins'][number]): Che
 /** Public household fields only; Year history needs active access even through legacy endpoints. */
 export const householdView = (record: HouseholdRecord, asOf: string = todayAsOf()): HouseholdView => ({
   version: record.version,
+  householdScope: householdScope(record),
   createdAt: record.createdAt,
   updatedAt: record.updatedAt,
   source: record.source,
