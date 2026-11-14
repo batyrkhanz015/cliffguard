@@ -92,7 +92,7 @@ export default async function Home() {
   const schedule = household ? checkinSchedule(todayAsOf(), household.checkins.at(-1)?.asOf) : null;
   return (
     <main>
-      {schedule && <aside className="bg-air px-4 py-4 text-center text-sm"><span className="font-semibold">Welcome back. {schedule.due ? `Your ${schedule.monthLabel} check-in is due.` : `Your next check-in is ${schedule.nextDate}.`}</span>{' '}<Link href="/checkin" className="font-semibold text-violet underline">Open your 2026 check-in</Link></aside>}
+      {schedule && <aside className="bg-air px-4 py-4 text-center text-sm"><span className="font-semibold">Welcome back. {schedule.due ? `Your ${schedule.monthLabel} check-in is due.` : `Your next check-in is ${schedule.nextDate}.`}</span>{' '}<Link href="/checkin" className="inline-flex min-h-11 items-center font-semibold text-violet underline">Open your 2026 check-in</Link></aside>}
       <section className="relative overflow-hidden bg-night text-white">
         <div
           aria-hidden

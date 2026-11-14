@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="bg-night">
           <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <Logo />
-            <nav aria-label="Main" className="flex gap-4 text-sm font-semibold text-white"><Link href="/unlock" className="underline">My plan</Link><Link href="/checkin" className="underline">Check-in</Link></nav>
+            <nav aria-label="Main" className="flex gap-4 text-sm font-semibold text-white"><Link href="/plan" className="inline-flex min-h-11 items-center underline">My plan</Link><Link href="/checkin" className="inline-flex min-h-11 items-center underline">Check-in</Link></nav>
           </div>
         </header>
         <div className="flex flex-1 flex-col">{children}</div>
