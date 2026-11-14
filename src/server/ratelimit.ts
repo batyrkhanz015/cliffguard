@@ -2,7 +2,7 @@ import 'server-only';
 import { Ratelimit } from '@upstash/ratelimit';
 import type { Redis } from '@upstash/redis';
 import { ApiError } from './errors';
-import { backend, store } from './store';
+import { backend, store, storeCall } from './store';
 
 export type LimitResult = { ok: boolean; retryAfterSec: number };
 type Limiter = (name: string, id: string, max: number, windowSec: number) => Promise<LimitResult>;
@@ -38,15 +38,24 @@ const windowLimiter: Limiter = async (name, id, max, windowSec) => {
 
 const limiter: Limiter = backend.kind === 'upstash' ? upstashLimiter(backend.redis) : windowLimiter;
 
-/** Counts one request by `id` (a session id or an IP) against `max` per `windowSec` for the rule `name`. */
+/**
+ * Counts one request by `id` (a session id or an IP) against `max` per `windowSec` for the rule
+ * `name`. The limiter only talks to storage, so its failures are StoreUnavailableError (503).
+ */
 export function limit(name: string, id: string, max: number, windowSec: number): Promise<LimitResult> {
-  return limiter(name, id, max, windowSec);
+  return storeCall(() => limiter(name, id, max, windowSec));
 }
 
 const MINUTE = 60;
 
 /** Spec §D route limits; the comment says what `id` counts. */
 export const LIMITS = {
+  /**
+   * per IP, shared by the routes that can create a household record (sample, PUT). Session limits
+   * reset when a client drops its cookie; this one doesn't. Roomy enough for a judging room behind
+   * one NAT, while one address can't mint more than ~17k records a day.
+   */
+  recordWriteIp: { max: 120, windowSec: 10 * MINUTE },
   /** per IP */
   householdRead: { max: 120, windowSec: MINUTE },
   /** per session */

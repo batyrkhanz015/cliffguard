@@ -11,12 +11,38 @@ export type Store = {
   incr(key: string, ttlSec?: number): Promise<number>;
 };
 
-/** Production has no Upstash credentials: storage fails loudly instead of silently forgetting. */
+/**
+ * Storage can't be reached: production has no Upstash credentials, or Upstash failed at runtime
+ * (network, quota, auth). Routes answer 503 STORE_UNAVAILABLE instead of silently forgetting.
+ */
 export class StoreUnavailableError extends Error {
-  constructor() {
-    super('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required in production');
+  constructor(
+    message = 'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required in production',
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
     this.name = 'StoreUnavailableError';
   }
+}
+
+/** Runs one call to the storage backend; any failure there becomes StoreUnavailableError (cause kept). */
+export async function storeCall<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (error) {
+    if (error instanceof StoreUnavailableError) throw error;
+    throw new StoreUnavailableError('The storage backend failed', { cause: error });
+  }
+}
+
+/** The store with every backend failure reported as StoreUnavailableError. */
+export function withStoreErrors(inner: Store): Store {
+  return {
+    get: (key) => storeCall(() => inner.get(key)),
+    set: (key, value, ttlSec) => storeCall(() => inner.set(key, value, ttlSec)),
+    del: (key) => storeCall(() => inner.del(key)),
+    incr: (key, ttlSec) => storeCall(() => inner.incr(key, ttlSec)),
+  };
 }
 
 type Env = Partial<Record<'UPSTASH_REDIS_REST_URL' | 'UPSTASH_REDIS_REST_TOKEN' | 'NODE_ENV', string>>;
@@ -95,7 +121,7 @@ export const backend = backendFor(process.env);
 
 export const store: Store =
   backend.kind === 'upstash'
-    ? upstashStore(backend.redis)
+    ? withStoreErrors(upstashStore(backend.redis))
     : backend.kind === 'memory'
       ? memoryStore()
       : unavailableStore();

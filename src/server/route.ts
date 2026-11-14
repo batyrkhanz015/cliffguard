@@ -35,8 +35,13 @@ export async function readJson<Schema extends z.ZodType>(request: Request, schem
   return parsed.data;
 }
 
-/** The caller's IP for per-IP limits; on Vercel the first `x-forwarded-for` entry is the client. */
-export function clientIp(request: Request): string {
+/**
+ * The caller's IP for per-IP limits. `x-forwarded-for` is trusted only because the app runs behind
+ * Vercel's proxy, which overwrites it with the real client address; anywhere else a client could set
+ * it. With no IP header, falls back to `fallbackId` (the session id) rather than one bucket shared by
+ * every caller.
+ */
+export function clientIp(request: Request, fallbackId: string): string {
   const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-  return forwarded || request.headers.get('x-real-ip') || 'unknown';
+  return forwarded || request.headers.get('x-real-ip')?.trim() || fallbackId;
 }

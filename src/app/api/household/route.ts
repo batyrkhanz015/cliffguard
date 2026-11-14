@@ -8,8 +8,9 @@ import { endSession, getSid } from '@/server/session';
 
 /** The session's household and where it stands today; both null before the first check. */
 export const GET = route(async (request) => {
-  await enforceLimit('householdRead', clientIp(request));
-  const household = await loadHousehold(await getSid());
+  const sid = await getSid();
+  await enforceLimit('householdRead', clientIp(request, sid));
+  const household = await loadHousehold(sid);
   if (household === null) return Response.json({ household: null, diagnosis: null });
   const diagnosis = diagnose(household.input, { gig: null, asOf: todayAsOf() });
   return Response.json({ household: householdView(household), diagnosis });
@@ -19,6 +20,7 @@ export const GET = route(async (request) => {
 export const PUT = route(async (request) => {
   const input = await readJson(request, HouseholdInputSchema);
   const sid = await getSid();
+  await enforceLimit('recordWriteIp', clientIp(request, sid));
   await enforceLimit('householdWrite', sid);
   const existing = await loadHousehold(sid);
   const source = request.headers.get('x-cliffguard-input-source') === 'upload' ? 'upload' : 'manual';

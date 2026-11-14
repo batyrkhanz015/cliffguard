@@ -3,7 +3,7 @@ import { todayAsOf } from '@/server/clock';
 import { buildSample } from '@/server/household';
 import { enforceLimit } from '@/server/ratelimit';
 import { householdView } from '@/server/redact';
-import { readJson, route } from '@/server/route';
+import { clientIp, readJson, route } from '@/server/route';
 import { getSid } from '@/server/session';
 
 const SampleRequestSchema = z.object({ persona: z.literal('dani') });
@@ -12,6 +12,7 @@ const SampleRequestSchema = z.object({ persona: z.literal('dani') });
 export const POST = route(async (request) => {
   await readJson(request, SampleRequestSchema);
   const sid = await getSid();
+  await enforceLimit('recordWriteIp', clientIp(request, sid));
   await enforceLimit('sample', sid);
   const { household, diagnosis, gig } = await buildSample(sid, todayAsOf());
   return Response.json({ household: householdView(household), diagnosis, gig });

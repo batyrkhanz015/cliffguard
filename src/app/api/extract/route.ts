@@ -20,7 +20,7 @@ export const POST = route(async (request) => {
     const sid = await getSid();
     const limits = await Promise.all([
       limit('extractSession', sid, 3, 3600),
-      limit('extractIp', clientIp(request), 10, 86400),
+      limit('extractIp', clientIp(request, sid), 10, 86400),
     ]);
     const denied = limits.filter((result) => !result.ok);
     if (denied.length) {

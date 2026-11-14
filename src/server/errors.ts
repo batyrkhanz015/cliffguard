@@ -46,7 +46,8 @@ export class ApiError extends Error {
 
 /**
  * The response for anything a route handler throws. Engine errors are the user's input (422);
- * anything unexpected is logged here and answered without details.
+ * storage outages are 503; both outages and anything unexpected are logged here and answered
+ * without details.
  */
 export function errorResponse(error: unknown): Response {
   if (error instanceof ApiError) {
@@ -56,6 +57,7 @@ export function errorResponse(error: unknown): Response {
   }
   if (error instanceof EngineError) return apiError(error.code, 422, error.message);
   if (error instanceof StoreUnavailableError) {
+    console.error('Storage unavailable', error);
     return apiError('STORE_UNAVAILABLE', 503, 'Saving is unavailable right now. Try again later.');
   }
   console.error('Unexpected API error', error);
