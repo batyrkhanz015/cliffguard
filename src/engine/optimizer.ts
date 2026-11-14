@@ -211,6 +211,10 @@ export function optimize(input: HouseholdInput, scenario: Scenario, rules: RuleS
   };
 
   if (!before.overCliff) return planWithoutMoves(ctx, 'under_line', []);
+  // A catastrophic plan earns no premium credit, so there is nothing for a plan to protect.
+  if (input.marketplace.planMetal === 'catastrophic') {
+    return planWithoutMoves(ctx, 'under_line', ['CATASTROPHIC_NO_PTC']);
+  }
 
   const plan = runPass(input, scenario, rules, allowed, target);
   if (reachesTarget(plan, target)) return planWithMoves(ctx, scenario, plan);

@@ -316,3 +316,13 @@ describe('server-only boundary', () => {
     expect(source.startsWith("import 'server-only';")).toBe(true);
   });
 });
+
+describe('optimize: catastrophic plans', () => {
+  test('over the cliff on a catastrophic plan: nothing to protect, no moves, flagged', () => {
+    const catastrophic: HouseholdInput = { ...DANI, marketplace: { ...DANI.marketplace, planMetal: 'catastrophic' } };
+    const plan = optimize(catastrophic, WITH_GIG);
+    expect(plan.verdict).toBe('under_line');
+    expect(plan.moves).toEqual([]);
+    expect(plan.flags).toEqual(['CATASTROPHIC_NO_PTC']);
+  });
+});

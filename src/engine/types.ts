@@ -212,6 +212,38 @@ export const ExplanationSchema = z.object({
 });
 export type Explanation = z.infer<typeof ExplanationSchema>;
 
+export type AlertCode =
+  | 'CROSSED_CLIFF'
+  | 'BACK_UNDER_CLIFF'
+  | 'APPROACHING_CLIFF'
+  | 'REPAYMENT_UP'
+  | 'REPORT_CHANGE'
+  | 'DEADLINE_SOON';
+/** A check-in alert: a code for the UI and static copy filled with engine numbers (spec §A.8). */
+export type Alert = { code: AlertCode; message: string };
+
+/** A dated step and the levers it affects (spec §A.8). */
+export type Deadline = { date: string; label: string; levers: LeverId[] };
+
+export type GigOptionId = 'decline' | 'take_do_nothing' | 'take_with_plan' | 'bill_in_january';
+
+/** The gig check (spec §A.7), plus the flags of the plan and the rough tax estimate. */
+export type GigCheckResult = {
+  gigAmount: number;
+  magiWithout: number;
+  magiWith: number;
+  crossesCliff: boolean;
+  taxOnGig: { seTax: number; incomeTax: number; total: number; marginalRate: number };
+  options: Array<{ id: GigOptionId; netFromGig: number; ptcKept: number; repayment: number; notes: string[] }>;
+  /** Gig amounts where taking it and doing nothing loses money; whole dollars. */
+  lossZone: { from: number; to: number } | null;
+  /** Gig 0 to 30,000 in steps of 500. */
+  curve: Array<{ gig: number; netDoNothing: number; netWithPlan: number }>;
+  /** Redacted by the API when unpaid. */
+  plan: PlanResult;
+  flags: FlagCode[];
+};
+
 /** Poverty line for one region: size 1 amount plus a fixed step per extra person. */
 export type FplLine = { base: number; perAdditional: number };
 export type FplTable = { contiguous: FplLine; alaska: FplLine; hawaii: FplLine };

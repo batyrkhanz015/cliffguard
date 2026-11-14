@@ -1,4 +1,5 @@
 import 'server-only';
+import { formatDate } from './format';
 import { computeIncome, type IncomeBreakdown } from './income';
 import { iraDeductibleLimit, sepLimit, type PhaseOutRange } from './retirement';
 import {
@@ -122,16 +123,6 @@ const HSA_PLANS: ReadonlySet<HouseholdInput['marketplace']['planMetal']> = new S
 const MONTHS_PER_YEAR = 12;
 
 export type Eligibility = { ok: true } | { ok: false; reason: string };
-
-/** "2026-12-31" → "Dec 31, 2026". */
-function formatDate(isoDate: string): string {
-  return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
 
 /** Whether the lever is open to this household on `asOf`, with a reason for the UI when it isn't. */
 export function isEligible(lever: LeverId, input: HouseholdInput, asOf: string, rules: RuleSet): Eligibility {

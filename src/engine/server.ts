@@ -18,3 +18,4 @@ export {
   type PlanState,
 } from './levers';
 export { federalTax, incomeTaxSaved, marginalRate, taxableIncome } from './tax';
+export { gigCheck } from './gig';
