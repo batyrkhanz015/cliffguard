@@ -31,7 +31,7 @@ T6 currently reads and writes entire household records without compare-and-set. 
 
 ## Deferred scope and verification
 
-Real Stripe, checkout success/cancel flows, Q&A, check-ins and calendar downloads remain deferred beyond this integration. No push or deployment is required for this integration.
+Real Stripe, checkout success/cancel flows and Q&A remain deferred. T11 now implements check-ins and calendar downloads; see [checkin-integration.md](checkin-integration.md). The branch handoff is described in [codex-handoff.md](codex-handoff.md); no production deployment is part of it.
 
 Run `npm run lint`, `npm run typecheck`, and `npm test`. Added coverage checks flag eligibility, request validation, rate limiting, entitlement idempotence/upgrades, redaction, identity omission, saved preferences/gig preservation and move-based export reconciliation. A local real-HTTP check covered sample → locked plan → Rescue grant → full plan → saved proof → printable export → Year upgrade. The connected browser was unavailable during implementation, so 375px visual, interactive and print-preview QA remain for review.
 
