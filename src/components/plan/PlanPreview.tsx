@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { moveKey } from '@/lib/keys';
 import { usePlanPreview } from '@/lib/usePlanPreview';
 import type { LoadedHousehold } from '@/lib/useHousehold';
 import { KeepMyCashToggle } from './KeepMyCashToggle';
@@ -43,7 +44,7 @@ export function PlanPreview({ household }: { household: LoadedHousehold }) {
   return (
     <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 sm:px-6">
       <div>
-        <Link href="/result" className="text-sm font-semibold text-violet underline underline-offset-4">
+        <Link href="/result" className="inline-flex min-h-11 items-center text-sm font-semibold text-violet underline underline-offset-4">
           Back to your result
         </Link>
         <h1 className="type-display mt-3 text-4xl sm:text-6xl">Your rescue plan</h1>
@@ -79,7 +80,7 @@ export function PlanPreview({ household }: { household: LoadedHousehold }) {
           <h2 className="type-display text-2xl sm:text-3xl">The moves</h2>
           <ul className={`mt-4 space-y-3 transition-opacity ${loading ? 'opacity-60' : ''}`}>
             {plan.moves.map((move) => (
-              <MoveCard key={`${move.leverId}-${move.adultId ?? 'household'}`} move={move} />
+              <MoveCard key={moveKey(move)} move={move} />
             ))}
           </ul>
         </section>

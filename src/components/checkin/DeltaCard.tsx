@@ -11,6 +11,6 @@ export function DeltaCard({ result }: { result: CheckinResult }) {
       {([['MAGI', before?.magi, result.checkin.result.magi], ['Headroom', before?.headroom, result.checkin.result.headroom], ['Repayment', before?.repayment, result.checkin.result.repayment]] as const).map(([label, previous, current]) => <div key={label}><dt className="text-sm text-gray-600">{label}</dt><dd className="mt-1 font-semibold tabular">{previous !== undefined && <><span>{formatMoney(previous)}</span><span aria-label="changes to"> → </span></>}{formatMoney(current)}</dd></div>)}
     </dl>
     {result.alerts.length > 0 && <ul className="mt-4 space-y-2">{result.alerts.map(alert => <li className="rounded-md bg-air p-3 text-sm" key={alert.code}>{alert.message}</li>)}</ul>}
-    <Link className="mt-4 inline-block font-semibold text-violet underline" href="/unlock">Review your updated plan</Link>
+    <Link className="mt-4 inline-flex min-h-11 items-center font-semibold text-violet underline" href="/plan">Review your updated plan</Link>
   </Card>;
 }

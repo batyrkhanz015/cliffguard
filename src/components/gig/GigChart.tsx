@@ -109,6 +109,7 @@ export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartPr
           step={SLIDER_STEP}
           value={marked}
           onChange={(event) => onGigChange(Number(event.target.value))}
+          aria-valuetext={`${formatMoney(gigAmount)} gig`}
           className="mt-2 h-11 w-full accent-violet"
         />
         {gigAmount > maxGig && (

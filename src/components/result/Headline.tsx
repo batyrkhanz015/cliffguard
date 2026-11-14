@@ -1,6 +1,7 @@
 import type { Diagnosis } from '@/engine';
 import { usd } from '@/engine/format';
 import { Card } from '@/components/ui/Card';
+import { fplLabel } from '@/lib/money';
 
 type StatProps = { label: string; value: string; tone?: 'default' | 'loss' | 'kept' };
 
@@ -13,11 +14,6 @@ function Stat({ label, value, tone = 'default' }: StatProps) {
       <dd className={`type-display mt-2 text-3xl tabular sm:text-4xl ${TONES[tone]}`}>{value}</dd>
     </div>
   );
-}
-
-/** "Over 400%" when the engine reports the over-the-cliff sentinel. */
-function fplLabel(fplPercent: number): string {
-  return fplPercent > 400 ? 'Over 400%' : `${fplPercent}%`;
 }
 
 function headlineFor(d: Diagnosis): string[] {

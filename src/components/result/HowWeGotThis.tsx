@@ -1,6 +1,6 @@
 import { householdIncome, type Diagnosis, type HouseholdInput } from '@/engine';
 import { usd } from '@/engine/format';
-import { formatMoney } from '@/lib/money';
+import { fplLabel, formatMoney } from '@/lib/money';
 
 type Line = readonly [label: string, value: string];
 
@@ -26,7 +26,7 @@ function form8962Lines(input: HouseholdInput, d: Diagnosis): Line[] {
     ['Family size', String(input.householdSize)],
     ['Household income', usd(householdIncome(d.income.magi))],
     ['Federal poverty line', usd(d.fpl)],
-    ['Household income as % of poverty line', d.fplPercent > 400 ? 'Over 400%' : `${d.fplPercent}%`],
+    ['Household income as % of poverty line', fplLabel(d.fplPercent)],
     ['Applicable figure', d.applicableFigure === null ? 'None, over the cliff' : `${(d.applicableFigure * 100).toFixed(2)}%`],
     ['Annual contribution amount', usd(d.annualContribution)],
     [

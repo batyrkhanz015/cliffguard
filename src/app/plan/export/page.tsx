@@ -39,7 +39,7 @@ export default async function ExportPage() {
   const filingLabels = { single: 'Single', mfj: 'Married filing jointly', hoh: 'Head of household' };
 
   return <main className="plan-export mx-auto w-full max-w-4xl px-4 py-10 text-sm leading-relaxed sm:px-6">
-    <div className="print:hidden mb-6 flex flex-wrap gap-4"><PrintButton /><a href="/plan" className="self-center text-violet underline">Back to plan</a></div>
+    <div className="print:hidden mb-6 flex flex-wrap gap-4"><PrintButton /><a href="/plan" className="inline-flex min-h-11 items-center text-violet underline">Back to plan</a></div>
     <h1 className="font-display text-3xl font-bold">CliffGuard · tax-preparer export</h1>
     <p className="mt-2">Tax year 2026 · {demo ? 'Demo access — no payment taken' : 'Unlocked plan'}</p>
     <p>Rules: {before.rulesId} · Engine as of {asOf} · Generated {timestamp}</p>

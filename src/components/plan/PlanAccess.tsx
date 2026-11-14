@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PLAN_CHANGED_EVENT } from '@/lib/planEvents';
 import { sendJson } from '@/lib/api';
+import { moveKey, revisionKey } from '@/lib/keys';
 import { createPlanCoordinator } from '@/lib/planCoordinator';
 import type { PlanAccessData } from '@/server/planAccess';
 import { Button, buttonClasses } from '@/components/ui/Button';
@@ -19,7 +20,7 @@ type State = { kind: 'loading' } | { kind: 'ready'; data: PlanAccessData; revisi
 /** Sibling of T7's page: its page and controls remain owned by T7. Never shown on /plan/export. */
 export function PlanAccess() {
   const pathname = usePathname();
-  const visible = pathname === '/plan' || pathname === '/unlock';
+  const visible = pathname === '/plan';
   const [state, setState] = useState<State>({ kind: 'loading' });
   const [coordinator] = useState(createPlanCoordinator);
   const sequence = useRef(0);
@@ -93,9 +94,9 @@ export function PlanAccess() {
             <p className="mt-2 text-sm">{state.data.access?.product === 'year' ? 'Log income as it lands, see computed alerts and prepare your January 15 estimate.' : 'Upgrade to Year for income check-ins, cliff alerts, calendar reminders and the January 15 estimate helper.'}</p>
             <div className="mt-4 flex flex-wrap gap-3"><Link href="/checkin" className={buttonClasses('secondary')}>{state.data.access?.product === 'year' ? 'Start check-in' : 'Preview Year check-ins'}</Link>{state.data.access?.product === 'year' && <a href="/api/calendar.ics" className={buttonClasses('secondary')}>Add deadlines to calendar (.ics)</a>}</div>
           </Card>
-          <ExplainMyPlan key={state.revision} />
-          <PlanProgress key={state.revision} initial={state.data.progress} coordinator={coordinator}>
-            {state.data.plan.moves.map((move) => !move.locked && <UnlockedMove key={`${move.leverId}-${move.adultId ?? 'household'}`} move={move} />)}
+          <ExplainMyPlan key={revisionKey('explain', state.revision)} />
+          <PlanProgress key={revisionKey('progress', state.revision)} initial={state.data.progress} coordinator={coordinator}>
+            {state.data.plan.moves.map((move) => !move.locked && <UnlockedMove key={moveKey(move)} move={move} />)}
           </PlanProgress>
           {state.data.access?.mode === 'demo' && state.data.access.product === 'rescue' && <Paywall plan={state.data.plan} demoEnabled={state.data.demoEnabled} onUnlocked={refresh} coordinator={coordinator} upgrade />}
         </>)}
