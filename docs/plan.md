@@ -56,14 +56,34 @@
 4. **`/success` replay or a foreign session:** a refresh, a second visit, or a session id from another browser. The entitlement write must be idempotent, a mismatch must return the error state, and nothing may be double-written. → test in Task 8.
 5. **Bad uploads:** more than 5 MB, a wrong type, or a document that isn't a notice. Return 413, 422 or `NOT_RECOGNIZED` with friendly copy, and the form stays usable. → test in Task 9.
 
+## G2 judge changes (override the spec where they conflict)
+
+The judge scored the spec 7.63 and found the original order infeasible. The critical path through M9 ends around 00:45. These changes apply:
+
+- **Sequencing:** insurance submit after **T7** (Dani → result → gig → plan preview, no paywall, ~22:30). Then T8 (Stripe and export, ~23:30), then T11-lite, T13 and the v1 deploy (~00:30). After 00:30: T9 (extraction), then T10 (Claude explanation; the template from T4 ships first), then T12 (Q&A, nice-to-have only).
+- **Scope cuts in v1:**
+  - Drop the `taxLossHarvest` lever entirely: no input field, no lever.
+  - Drop the IRA↔SEP rerun. Instead, **IRA and SEP are mutually exclusive per adult**. Once one is used for an adult, the optimizer skips the other for that adult and adds flag `IRA_SEP_COMBO_EXCLUDED`.
+- **Rule fixes (the research file wins):**
+  - HI per extra person is **$6,330** (HI cliff for 4 = $147,920).
+  - Add the 2027 AK ($19,950 + $7,100) and HI ($18,360 + $6,530) poverty lines.
+  - SEP compensation cap is **$360,000**.
+  - Catastrophic plans get no PTC: flag `CATASTROPHIC_NO_PTC` and treat APTC as 0 for them. HSA stays eligible.
+  - F7's FPL % is **406** under our truncation rule; the dollar figures are unchanged.
+  - `per1000` is computed numerically (see T2), not `1000 × figure`.
+- **No hardcoded numbers in copy:** the S4 `under_line` text uses the engine's `per1000`.
+- **Mid-year APTC changes:** the model holds a single APTC. The check form tells users who already reported a change to enter their **average** monthly credit.
+- **Tax estimate:** QBI stays out of v1 and is flagged `ROUGH_TAX_ESTIMATE`. The UI labels gig figures "rough federal estimate".
+
 ## Execution order and parallelism
 
 ```
 T1 ─┬─► T2 ─► T3 ─► T4 ─┐   (builder A, worktree "engine")
     └─► T5 ─────────────┤   (builder B, worktree "ui-shell"; uses only T1 types)
                         ▼
-                 merge ─► T6 ─► T7 ─► T8 ══► G3: deploy + QA + judge + insurance submit (orchestrator)
-                                        ─► T9 ‖ T11 ─► T10 ─► T12 (cut first) ─► T13 ══► G4
+                 merge ─► T6 ─► T7 ══► G3: deploy + QA + judge + insurance submit (~22:30)
+                               ─► T8 (~23:30) ─► T11-lite ─► T13 ══► v1 deploy (~00:30)
+                               ─► T9 ─► T10 ─► T12 (nice-to-have) ══► G4
 ```
 - **Orchestrator-only steps** (no builder): Vercel link plus first deploy right after T5 merges, which needs the captain's `vercel login`. Env vars on Vercel. G3 and G4 gates.
 - A `code-reviewer` reviews each task before the merge or the next task.
@@ -97,7 +117,7 @@ T1 ─┬─► T2 ─► T3 ─► T4 ─┐   (builder A, worktree "engine")
   - `IncomeBreakdown = { seProfitByAdult: Record<AdultId, number>; seTaxByAdult: Record<AdultId, number>; halfSeTax: number; wages: number; capGainsAllowed: number; agi: number; magi: number; seAdultId: AdultId | null }`
 - Produces `DANI: HouseholdInput`, `DANI_GIG = { amount: 12000, canBillInJanuary: false }` and `DANI_AS_OF = '2026-11-14'` (spec §B preset).
 
-- [ ] **Step 1: Write `rules/ty2026.ts` from `research/tax-tables-2026.md`.** Use the JSON blocks `fpl2025`, `fpl2026`, `applicablePct2026`, `brackets2026`, `standardDeduction2026` and `limits2026`. Store bands as integer basis points (`startBp`, `endBp`). Compare each value with spec §A.2, and list every difference in the task report. `sbmStates` comes from the research file; if it isn't there, use spec §A.2 and add a `// assumption` comment. Write `ty2025-enhanced.ts` from spec §A.2 "Test-only".
+- [ ] **Step 1: Write `rules/ty2026.ts` from `research/tax-tables-2026.md`.** Use the JSON blocks `fpl2025`, `fpl2026`, `applicablePct2026`, `brackets2026`, `standardDeduction2026` and `limits2026`. Store bands as integer basis points (`startBp`, `endBp`). Compare each value with spec §A.2, and list every difference in the task report. Apply the rule fixes in "G2 judge changes" (HI $6,330; 2027 AK/HI; SEP compensation cap $360,000). `sbmStates` comes from the research file; if it isn't there, use spec §A.2 and add a `// assumption` comment. Write `ty2025-enhanced.ts` from spec §A.2 "Test-only". Remove `taxLossHarvest` from `LeverId`, `LIQUID_LEVERS` and `DEFAULT_LEVER_ORDER`, and remove `unrealizedLosses` from the input schema.
 - [ ] **Step 2: Write the failing tests.** Use this pattern:
 
 ```ts
@@ -110,7 +130,8 @@ test('F11 401 → null', () => expect(applicableFigure(401, TY2026)).toBeNull())
 
   Also write tests for:
   - `fplPercent(3.997 × fpl)` → 399
-  - `povertyLine('TX', 4)` → 32,150; `cliffAmount` → 128,600; AK and HI per research
+  - `povertyLine('TX', 4)` → 32,150; `cliffAmount` → 128,600; HI family of 4 → cliff 147,920; AK per research
+  - **IRS 2026 Table 2 vectors** from `research/tax-tables-2026.md` (every FPL% → figure pair it lists), asserted with `applicableFigure`
   - **F14:** `HouseholdInputSchema` rejects `filingStatus: 'mfs'`
   - the F1 income part: `computeIncome(DANI, {gig:null, asOf:DANI_AS_OF}, TY2026)` gives `halfSeTax` 6,464, `agi` 121,536 and `magi` 122,036 (±1)
 - [ ] **Step 3: Run `npx vitest run src/engine`.** Expected: FAIL (modules missing).
@@ -136,12 +157,15 @@ test('F11 401 → null', () => expect(applicableFigure(401, TY2026)).toBeNull())
 - [ ] **Step 1: Write the failing tests**, asserting every value in the spec §B rows:
   - **F1:** the full row, including SLCSP 19,800, PTC 7,645, repayment 1,697, headroom 6,564, zone `near`, `reportChange` {true, 122,036} and `daysToYearEnd` 47.
   - **F2:** each MAGI → repayment or refund pair, by calling `reconcile` with Dani's SLCSP and APTC.
-  - **F5, F6, F7:** use `TY2025_ENHANCED` and `{...TY2026, fpl: <2024 FPL>}` as the spec says.
+  - **F5, F6, F7:** use `TY2025_ENHANCED` and `{...TY2026, fpl: <2024 FPL>}` as the spec says. F7's FPL % is **406** (truncation), not 407.
+  - **IRS worked example** from the 2026 draft Form 8962 instructions in `research/tax-tables-2026.md`: household income $71,910 → excess APTC **$1,529**. Use that example's own household size, SLCSP and APTC as listed in the research file.
+  - **per1000:** Dani at F1 → `per1000` equals `reconcile(magi + 1000).repayment − reconcile(magi).repayment` (≈ 99.6). At a 275% FPL household it is ≈ 176, not 92.
+  - **Catastrophic:** `planMetal: 'catastrophic'` → flag `CATASTROPHIC_NO_PTC` and repayment 0.
   - **F8:** repayment 9,342.
   - **F12:** the three guards.
   - **Flags:** `SBM_STATE` for `state:'CA'`; `NO_APTC` when APTC is 0; `PARTIAL_YEAR` when months is 6.
 - [ ] **Step 2: Run `npx vitest run src/engine`.** Expected: the new tests FAIL.
-- [ ] **Step 3: Implement** `slcsp.ts`, `reconcile.ts` (no cap when `rules.repaymentCaps` is null; caps by band and filing status otherwise) and `diagnose.ts` (zone thresholds and `per1000` per spec §A.4).
+- [ ] **Step 3: Implement** `slcsp.ts`, `reconcile.ts` (no cap when `rules.repaymentCaps` is null; caps by band and filing status otherwise) and `diagnose.ts` (zone thresholds per spec §A.4). `per1000` is the numeric difference above, clamped at ≥ 0. When adding $1,000 crosses the cliff, use the step just below the cliff instead, and add flag `NEAR_CLIFF_STEP`.
 - [ ] **Step 4: Run the engine tests, lint and typecheck.** Expected: PASS.
 - [ ] **Step 5: Commit** with message `feat(engine): SLCSP derivation, reconciliation, diagnose` plus the trailer.
 
@@ -172,7 +196,7 @@ test('F11 401 → null', () => expect(applicableFigure(401, TY2026)).toBeNull())
   - **F15:** `test.each` over F3/F4/F9/F10 inputs checking: amounts are multiples of 10; amounts ≤ capacity; no `locked` liquidity when keepMyCash is on; `magiAfter ≤ target` when feasible; and `expect(optimize(x)).toEqual(optimize(x))`.
   - **IRA phase-out:** a covered single filer with IRA MAGI of $86,000 gets a deductible limit of $3,750 (spec §A.6 formula, rounded up to $10).
 - [ ] **Step 2: Run the tests.** Expected: FAIL.
-- [ ] **Step 3: Implement** spec §A.5 and §A.6. That covers the lever table, the binary search over $10 multiples, per-adult IRA sub-levers, the single SEP→covered rerun, and the verdict rules.
+- [ ] **Step 3: Implement** spec §A.5 and §A.6, minus the cuts in "G2 judge changes". That covers the lever table without `taxLossHarvest`, the binary search over $10 multiples, per-adult IRA sub-levers, and the verdict rules. **There is no SEP→covered rerun.** IRA and SEP are mutually exclusive per adult, with flag `IRA_SEP_COMBO_EXCLUDED` when one is skipped, and a test for it.
 - [ ] **Step 4: Run the engine tests, lint and typecheck.** Expected: PASS.
 - [ ] **Step 5: Commit** with message `feat(engine): tax estimate, levers, optimizer` plus the trailer.
 
@@ -237,6 +261,8 @@ Runs in parallel with T2–T4 and depends only on T1. **Load the `frontend-desig
   - the who-it's-for/not-for section;
   - the SBM warning on step 1;
   - the manual SLCSP field when the guards are "no";
+  - step 2 helper text: "If your credit changed during the year, enter your average monthly credit.";
+  - step 5 has **no** unrealized-losses field;
   - the footer copy from Global Constraints.
 - [ ] **Step 4: Run all checks, then `npm run build`.** Open `/` and `/check` at 375 px and desktop in `npm run dev`. Expected: checks PASS, and the pages render without console errors.
 - [ ] **Step 5: Commit** with message `feat(ui): app shell, landing, check form` plus the trailer.
@@ -307,7 +333,8 @@ Runs in parallel with T2–T4 and depends only on T1. **Load the `frontend-desig
   - The slider runs from $0 to $40k.
   - The loss-zone band is red on the gig chart.
   - Locked amounts render as `$•,•••` with a lock icon.
-  - The verdict states (`under_line`, `not_worth_fighting`, `needs_retirement_moves`) use the spec copy.
+  - The verdict states (`under_line`, `not_worth_fighting`, `needs_retirement_moves`) use the spec copy. In the `under_line` copy, "$100" is replaced with the engine's `per1000`, formatted.
+  - Gig figures carry the label "Rough federal estimate (excludes QBI deduction and state tax)".
   - Lever reorder uses up/down buttons. A disabled lever shows its reason.
   - With no household, redirect to `/`.
 - [ ] **Step 4: Run all checks.** Then, in `npm run dev` at 375 px, click "Try Dani's family". Expected:
@@ -316,6 +343,13 @@ Runs in parallel with T2–T4 and depends only on T1. **Load the `frontend-desig
   - the gig table shows $1,321 and $8,548;
   - flipping Keep my cash recomputes the totals, and the amounts stay locked.
 - [ ] **Step 5: Commit** with message `feat(ui): result, gig check, plan preview` plus the trailer.
+
+**═══ G3 (orchestrator, ~22:30):**
+1. Merge.
+2. Deploy to Vercel.
+3. Run `qa-tester` on prod (Dani → result → gig → plan preview).
+4. Run the `judge` (G3).
+5. Captain decides on the insurance submission.
 
 ### Task 8: Paywall, Stripe test checkout, success verification, unlocked plan, export
 
@@ -353,12 +387,7 @@ Runs in parallel with T2–T4 and depends only on T1. **Load the `frontend-desig
 - [ ] **Step 4: Run all checks.** With test keys in `.env.local`, buy both products through the 4242 card. Expected: `/plan` unlocks, and `/plan/export` prints. Without keys, the paywall shows the 503 copy.
 - [ ] **Step 5: Commit** with message `feat: Stripe test paywall, success verification, unlocked plan, export` plus the trailer.
 
-**═══ G3 (orchestrator):**
-1. Merge.
-2. Deploy to Vercel, with env vars set.
-3. Run `qa-tester` on prod.
-4. Run the `judge` (G3).
-5. Captain decides on the insurance submission.
+**═══ After T8:** redeploy and run `qa-tester` on the paywall path (~23:30). Next: T11 as **T11-lite** (check-in form, delta card, `.ics`, Jan 15 card; history sparkline optional), then T13, then the **v1 deploy (~00:30)**. T9, T10 and T12 follow, in that order.
 
 ### Task 9: Eligibility-notice extraction (Claude)
 

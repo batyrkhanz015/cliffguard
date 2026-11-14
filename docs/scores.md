@@ -115,3 +115,181 @@ The research agents scored themselves 7.1–7.7. I come in lower on almost every
 - The congress.gov text of §71305.
 - A dedicated HealthSherpa feature search.
 - Any Congress.gov action after Oct 2026.
+
+---
+
+## G2: spec review (2026-11-14, ~19:50)
+
+**What was judged:** `docs/spec.md` (G2 draft, 834 lines), scored as the product it promises. Every number in §A.2 and §B was checked against `research/tax-tables-2026.md` (the research file wins), and every fixture was recomputed by hand. G1 objections were checked one by one. Originality was re-searched today, and three facts were re-verified at the source: KFF's worked example, what an eligibility notice shows, and the CMS list of state-based marketplaces.
+
+### Score table (each criterion 1–10)
+
+| Criterion | Weight | G1 | **G2** | Why it moved |
+|---|---|---|---|---|
+| Works | 40% | 8 | **8.5** | Form 8962 method; every fixture I recomputed matches; intake moved to a document users have today (the eligibility notice); the magic moment uses no LLM; server-side redaction, grounding validator, kill switch. Held back by scope risk and the rule gaps below |
+| Sell | 20% | 6.5 | **7.0** | Leads with the gig decision and the rescue; Keep my cash; decoy pricing; a real `.ics` and real check-ins. The paywall leaks (see objections) |
+| Who | 15% | 8.5 | **8.5** | Dani plus a dated 47-day trigger is sharp. Still no user-voice quotes beyond press (D8 open) |
+| Money | 15% | 5.5 | **6.0** | Honest ACA ceiling and a sensitivity table. But the $100M rests 80% on expansion, the table contradicts itself, and the LTV arithmetic is off |
+| New | 10% | 6 | **6.5** | The gig "loss zone" plus the ordered optimizer is distinctive. A new free rival (Tax47) now pitches "does an HSA pull you under 400%" |
+| **Weighted** | | **7.20** | **7.63** | |
+
+**Risk-adjusted:** if only M1–M9 ship, rough, at 00:30, Works drops to about 7.5 and the total to **about 7.2**, i.e. no gain over G1. The spec is good enough; the clock is the risk.
+
+### 1. Table consistency (the research file wins)
+
+I checked every value against the research file. **These match:**
+- FPL for the 48 states + DC and for AK
+- every 2026 cliff
+- all six applicable-% bands
+- `repaymentCaps: null`
+- standard deductions
+- all three bracket schedules (single, MFJ, HOH)
+- SE factor 0.9235 and wage base $184,500
+- HSA $4,400 / $8,750
+- IRA $7,500 and all three phase-out ranges
+- SEP 20% and $72k
+- every date in `dates`
+- the 2027 contiguous FPL ($15,960 + $5,680; cliff $132,000)
+- the TY2025 repayment caps
+
+**Mismatches and gaps:**
+
+| # | Spec location | Spec says | Research says | Impact |
+|---|---|---|---|---|
+| T1 | §A.2 `fpl`, **line 387** | Hawaii +**$6,325** per extra person | **+$6,330** (§1a line 43; JSON line 86) | HI family of 4: FPL $36,965 vs **$36,980**; cliff $147,860 vs **$147,920**. A HI household at $147,861–$147,920 is wrongly told it's over the cliff and owes the full APTC |
+| T2 | §A.2 `nextYear.fpl`, **line 401** | 48 states + DC only | AK **$19,950 + $7,100**, HI **$18,360 + $6,530** (§1c lines 67–78) | The Jan 15 card shows the wrong 2027 cliff in AK/HI (AK family of 4: $165,000, not $132,000) |
+| T3 | §B **F7, line 640** | "actual $105,000 (**407%**, 8.5%)" | The truncation rule (research §2c line 139; spec C6) gives floor(105,000 × 100 / 25,820) = **406** | Dollars unaffected ($745 still holds: ≥400 → 8.5%), but a test asserting `fplPercent === 407` fails. KFF rounds; we truncate. Say so in the deck |
+| T4 | §A.2 `sep`, **line 399** | 20%, cap $72,000 | Also a **compensation cap of $360,000** (§8 line 317) | No fixture impact; the rule set should carry it |
+| T5 | §A.2 `hsa` line 397, lever table **line 510**, edge table line 617 | `catastrophic` treated like bronze in a PTC household | **Catastrophic plans are not QHPs for the PTC** (§5 line 254, gotcha 12) | Needs a `CATASTROPHIC_NO_PTC` flag: APTC should be 0, and reconciliation doesn't apply |
+| T6 | §A.2 status column, lines 387–399 | "confirm" on AK/HI, bands, single/HOH brackets, std deduction, wage base, IRA single, SEP | All **[primary]** in research §1–§10 | Update the labels and cite the research file in the code comments |
+| T7 | §A.2 `sbmStates`, line 402 | "Assumption, confirm in tax-tables-2026" | Not in the research file | **I verified it:** CMS lists 21 full SBEs for PY2026, and the spec's 21 match. **Oregon becomes a full SBM for PY2027**, which matters for the 2027 loop ([CMS](https://www.cms.gov/cciio/resources/fact-sheets-and-faqs/state-marketplaces)) |
+| T8 | §B **F11, line 644** | Self-computed vectors only | Research §2c lines 144–150 lists **IRS Table 2 vectors** (136→0.0333, 142→0.0370, 160→0.0467, 202→0.0667, 229→0.0767, 263→0.0884, 288→0.0960, 299→0.0993), and §5 item 10 (lines 246–250) has **IRS Allocation Situation 4** ($71,910, family of 2 → excess **$1,529**) | Not a mismatch, but the best trust asset is missing. Add both as fixtures. I checked that the spec's bp formula reproduces all 8 vectors and the $1,529 |
+
+Omitted, no fixture impact: Additional Medicare Tax (0.9% over $250k MFJ), and the income-based-SEP PTC disallowance (§71304, research §5). Add both to the flags or the cut list.
+
+**Fixture recomputation (by hand, against research values):**
+- **These match:** F1, F2, F3, F3c, F4, F5, F6, F7 (dollars), F9, F10, F11, F13, all ±$1.
+- **F3b:** the upper bound of the loss zone computes to $10,232 vs the spec's $10,233, inside the ±$5 tolerance.
+- **KFF inputs verified at the source:** estimate $100k, actual $105k, APTC $34,463, ages 52/52/19 ([KFF](https://www.kff.org/affordable-care-act/marketplace-enrollees-with-unpredictable-incomes-could-face-bigger-penalties-under-house-reconciliation-bill-provision/)). So F7 is a real reproduction, not a circular one.
+
+**Rule and math errors that are not table issues:**
+- **R1 (§A.4 line 468):** `per1000 = 1000 × figure` is right only in the flat 300–400% band. In the sliding bands, the slope term is ignored. At 275% FPL for a family of 4, the real cost is about **$176 per $1,000**, not $92. Compute it as `diagnose(MAGI + 1000) − diagnose(MAGI)`.
+- **R2 (§C S4, line 661):** the copy "Each $1,000 more costs you about **$100** of credit" is a hardcoded number, which is exactly the faking pattern §4 forbids. Fill it from the engine.
+- **R3:** the variable earner who follows our own "Report a change" card ends up with **two APTC amounts in the year**. The model has one `aptcMonthly × months`, so the product's own advice breaks its own model at the next check-in. Add the guard "Changed your Marketplace income this year?" and up to 2 APTC segments. Keep deriving SLCSP from the original notice.
+- **R4 (§8 line 178):** the LTV formula as written gives **$136.6**, not $134 (LTV/CAC 3.9x). It is in our favor, but a juror who checks it finds an error.
+- **R5 (§8 lines 182 vs 187):** the ACA row claims **$20M ("plus state exchanges")** against a stated **$12–17M ceiling**, yet the 19.2M base already includes the SBMs. That's an internal contradiction.
+
+### 2. Feasibility
+
+**Verdict: M1–M16 is not buildable by 00:30, and "M1–M9 by 22:00" (§10) is impossible.**
+- The must-haves sum to **8.85 builder-hours**, before code review after every task, the sample-notice PDF (a hidden task of about 0.5h), env setup and QA.
+- M1 (the engine, 1.75h, optimistic) blocks M5, M6, M7 and M9.
+- Even with two builders starting around 20:15, the critical path is about 1.75 + 2.0 + review and deploy ≈ **4.5h → about 00:45 for M1–M9 alone**.
+
+**Cuts, now:**
+1. **M15 Q&A (tool use) → move to the nice-to-haves.** The spec already marks it first to cut, so cut it now, not at 23:30.
+2. **M12 → template first.** `explainTemplate.ts` is required anyway as the fallback. Add Claude and the grounding validator only after 00:30.
+3. **M10 extraction plus the sample notice → after 00:30.** It's the "AI reads your document" signal, but no part of the magic moment needs it.
+4. **Engine:**
+   - Drop `taxLossHarvest`. It is $0 in every fixture, and it carries wash-sale logic and securities-advice exposure.
+   - Replace the IRA/SEP rerun and spousal-IRA joint-compensation logic with one conservative rule: an adult with SEP in the plan gets the "covered" phase-out.
+   - Build `TY2025_ENHANCED` (F6b/F7) after G3. It's pitch evidence, not on the jury path.
+5. **M11 lite:** check-in, `.ics` and the Jan 15 card. No sparkline or history chart.
+6. **No nice-to-haves (N1–N10) before G4.**
+
+**Sequence:**
+- **Insurance submit, 22:00–22:30:** M1-core (F1, F2, F3, F3b, F4, F11 plus the IRS vectors) + M2 + M3 + M5 + M6 + M7 preview, deployed. Dani → result → gig → plan preview, with no paywall.
+- **23:30:** M8 + M9 (Stripe, unlock, export).
+- **00:30:** M13 + M14 + M11-lite + M16.
+- **After 00:30, before 02:00:** M10, M12-Claude.
+- **Batch code review** for small UI tasks.
+
+### 3. Fakes and trust risks a repo-reading juror will hit
+
+1. **R2 above:** a hardcoded "$100" in UI copy.
+2. **Every pitch number sits in `__tests__/fixtures.ts`.** That's legitimate, but a juror who greps `8548` lands there first. The README should say: "These are test expectations. The UI computes them live; see `src/samples/dani.ts`, which holds inputs only."
+3. **The sample eligibility notice is a fabricated document.**
+   - Label it "Fictional sample" inside the PDF and the UI.
+   - Commit how it was generated.
+   - Never cache its extraction.
+   - Real notices show "Premium tax credit **available**: $X/month" and "Estimated income used: $Y/year" ([sample notices](https://www.carewellseiu503.org/wp-content/uploads/securepdfs/Edited-8.22.23-OE-single-QHP-w-savings.English-508.pdf)). That is the *maximum* credit, so `tookFullCredit` must always be asked, never inferred.
+4. **The "$1 vs TurboTax" claim holds only with a real benchmark.** A derived SLCSP can be off by a few dollars against the 1095-A column B because of Marketplace monthly rounding. Say so in the "How we got this" panel.
+
+### 4. Legal and compliance wording
+
+- **"Bill $3,000 of this month's *retainer* in January"** (§4 line 90 and §12 line 291). A retainer is typically money due or available now, so this wording contradicts our own constructive-receipt warning (line 531). Use "invoice the $3,000 of work you haven't billed yet in January".
+- **"Education, not tax advice" next to a $79 "exact amounts, step-by-step instructions"** is a weak shield that a juror will call out. Reframe it as "a personalized estimate and options to review with your preparer". "The legal way to say yes" (line 291) becomes "rule-based options".
+- **Securities levers.** Personalized "harvest this loss / delay this sale" advice for a fee edges into investment-adviser territory. Cutting `taxLossHarvest` removes most of that exposure.
+- **HSA under "Keep my cash".** Non-medical withdrawals are taxed plus 20%. Label it "medical-use money", not cash.
+- **Marketplace understatement: well handled.**
+  - `reportChange` uses MAGI before the plan.
+  - F13 sets the floor.
+  - The Jan 15 card adds the deferred income.
+  - The system prompt refuses.
+
+  One cheap addition: the Jan 15 card should also suggest the IRS-endorsed safe option, "take less APTC in advance" (research §13).
+
+### 5. Pitch risks
+
+- **The $1,321 / −$1,668 figures are correct under the spec's assumptions; I recomputed both.** Weakness: they ignore **QBI**, which is a plain 20% deduction for Dani, far below the threshold.
+  - With QBI, the gig figure becomes about **$1,589 kept**, the $8,000 loss about **−$1,490**, and the loss zone about **$7,064–$9,935**.
+  - A tax-savvy juror will spot the omission in the most-quoted number.
+  - Either add the below-threshold QBI (about 0.3h) or say "about $1,500 poorer".
+- **"$8,548 kept" counts $3,000 deferred into 2027 and $1,130 placed in an HSA.** The 2027 tax and 2027 MAGI on the deferral are assumed away. The UI's "of which…" line covers this, and the pitch must say it out loud.
+- **The $100M path is not credible enough for 15%.** Its strength is the honest $12–17M ceiling for the ACA wedge. Its weaknesses:
+  - (a) It contradicts itself (R5).
+  - (b) $59M (59%) comes from "Income Guard", which cites cliffs that **don't bind at $60–160k**: the CTC phase-out starts at $400k MFJ, and the QBI thresholds are about $400k MFJ. Jurors who know taxes will notice.
+  - (c) "7M seats × $3" has no basis.
+  - (d) The core TAM counts every swinging enrollee, not those near the line.
+  - (e) **Policy risk is waved away.** Research §0 says the Senate reportedly flipped, and the House already passed an extension in Jan 2026. The honest answer: uncapped repayment hits **every** APTC household at **every** income, and it stays unless that repeal is reversed too.
+
+### Objections per criterion (strongest juror line)
+
+- **Works (8.5):** "This is 16 must-haves for a 24h team; I'll get a half-wired paywall and a 404 on check-in." Also: "Your result screen holds 2 charts, 2 sliders, 4 cards and an accordion at 375 px, and I don't know what 'applicable figure' means." Keep the first screen to 3 numbers, the wall and one CTA, and put everything else below the fold.
+- **Sell (7.0):** "What does $79 unlock? Invoice timing and purchases are amounts **I typed in myself**, and your free slider shows exactly how much MAGI to cut, which gives away the HSA number. Your paywall locks my own inputs." Sell the **execution kit** instead (dated steps, proofs, preparer export with the 8962 preview) plus monitoring, and say so on the paywall.
+- **Who (8.5):** "Every quote is from a journalist's article, not from a user asking for this tool, and none of us on the jury buys Marketplace coverage." D8, the Reddit quotes, is still open.
+- **Money (6.0):** "Your own table says the core tops out at $17M, then books $20M from it. The other $80M is a tax app competing with Keeper, FlyFin, TurboTax SE and Found, built around cliffs your persona never reaches. And one bill in the new Congress removes your 2027 renewal reason."
+- **New (6.5):**
+  - "Tax47 is free, needs no sign-up, and already says 'test whether an HSA contribution pulls you under 400% FPL'."
+  - "Instead has been blogging about this exact cliff since Feb 2026, and beancount.io has SEP-IRA cliff guides."
+  - "Three of your own agents found this idea, so other teams will too."
+  - Rebuttal: no product found does the gig decision, the loss zone, the ordered optimizer with Keep my cash, notice intake and monitoring together.
+
+**Originality, searched today:**
+- Named in G1: StateCalc, healthinsurance.org, NerdWallet, KFF, nationaltaxtools, aca-subsidy-guide.vercel.app, beancount.io (SEP and SEHI cliff guides), thefinancebuff, Stride Health (an income-update flow and a "repay full excess" notice; no optimizer or alerts found).
+- New since G1:
+  - **Tax47** (free; HSA-under-400% testing): [tax47.app](https://tax47.app/blog/aca-premium-tax-credit-2026/)
+  - **ustax.tools** (a PTC calculator plus a "MAGI cliffs by program" page, which overlaps the Income Guard pitch)
+  - **Instead** blog (Feb 2026) on the 2026 cliff
+  - sum.money, selfemployed.com and Gerald Wallet guides
+
+### Top 3 changes, ranked by score gain per hour
+
+1. **Cut and resequence now (about 0.25h of orchestrator time, 0 builder-hours). Protects about +0.4 weighted (Works) against a broken G3.**
+   - Move M15 to the nice-to-haves.
+   - M12 template-first.
+   - M10 after 00:30.
+   - Drop `taxLossHarvest`, the IRA/SEP rerun and the sparkline.
+   - Insurance submit = magic moment only, by 22:30 (§2).
+2. **Fix T1–T5, R1–R3 and add the IRS primary fixtures inside M1 (about 0.5h builder). +0.2 weighted (Works +0.5).**
+   - Covers the HI $6,330, the AK/HI 2027 table, F7 → 406, SEP $360k, `CATASTROPHIC_NO_PTC`, numeric `per1000`, the hardcoded "$100" filled from the engine, and the APTC-change guard.
+   - Add IRS Table 2 vectors plus Allocation Situation 4 ($1,529).
+   - The README can then say "reproduces the IRS's own 2026 Form 8962 example", the strongest trust line available.
+3. **Rewrite §8 (about 0.5h strategist/pitch-writer, 0 builder-hours). +0.1–0.15 weighted (Money +0.75–1).**
+   - Remove the $20M-vs-ceiling contradiction and fix LTV to $137.
+   - Size the core on the near-cliff band and on uncapped repayment at every income.
+   - Replace the non-binding cliffs with ones that bind at $60–160k (AGI-based student-loan payments under RAP/IDR, Roth limits for singles, kids' Medicaid/CHIP at lower bands).
+   - Give B2B2C one named partner type with per-seat logic.
+   - State the policy-risk answer.
+
+**Next, in order:**
+- (4) Below-threshold QBI in `tax.ts` (0.3h), or soften the pitch to "about $1,500".
+- (5) Copy fixes: "retainer", "instructions", HSA labelled "medical-use", and "5 questions" → "5 steps" (the form has more than 20 fields). About 0.25h.
+- (6) Paywall copy that sells the kit plus monitoring (0.25h).
+- (7) D8 Reddit quotes (a human, 0.5h; Who +0.5).
+
+**Checks I could not complete:**
+- Reddit evidence.
+- The ustax.tools page (403).
+- Whether OBBBA changed QBI thresholds for 2026 (not in the research file; irrelevant for Dani).
+- Congressional action after Nov 5, 2026.
