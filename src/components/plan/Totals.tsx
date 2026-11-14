@@ -2,10 +2,10 @@ import { usd } from '@/engine/format';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { formatMoney } from '@/lib/money';
-import type { PlanSummary } from '@/lib/planView';
+import type { PlanView } from '@/lib/planView';
 
 type TotalsProps = {
-  plan: PlanSummary;
+  plan: PlanView;
   /** What the gig leaves you with after the plan, when a gig is being checked. */
   netKept: number | null;
   /** True while the plan is being recomputed; the figures shimmer. */

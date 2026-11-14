@@ -1,7 +1,7 @@
 import type { PlanVerdict } from '@/engine';
 import { usd } from '@/engine/format';
 import { Button } from '@/components/ui/Button';
-import type { PlanSummary } from '@/lib/planView';
+import type { PlanView } from '@/lib/planView';
 
 const LABELS: Record<PlanVerdict, { text: string; tone: string }> = {
   under_line: { text: 'Under the line', tone: 'bg-kept text-night' },
@@ -12,11 +12,12 @@ const LABELS: Record<PlanVerdict, { text: string; tone: string }> = {
 };
 
 type VerdictBadgeProps = {
-  plan: PlanSummary;
+  plan: PlanView;
   /** Extra owed at filing for $1,000 more income (from the diagnosis). */
   per1000: number;
   onAllowRetirement: () => void;
-  onSeeYear: () => void;
+  /** Shows the Year upsell on an under-the-line plan; omitted until checkout exists. */
+  onSeeYear?: () => void;
 };
 
 /** The plan's verdict, and what it means in plain words for the states that change the next step. */
@@ -34,9 +35,11 @@ export function VerdictBadge({ plan, per1000, onAllowRetirement, onSeeYear }: Ve
           <p className="text-gray-700">
             Income moves around. A monthly check-in tells you before it drifts toward the line.
           </p>
-          <Button variant="secondary" onClick={onSeeYear}>
-            See CliffGuard Year
-          </Button>
+          {onSeeYear && (
+            <Button variant="secondary" onClick={onSeeYear}>
+              See CliffGuard Year
+            </Button>
+          )}
         </div>
       )}
 

@@ -26,7 +26,7 @@ function retryAfter(response: Response): number | null {
   return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : null;
 }
 
-export async function sendJson(method: 'POST' | 'PUT' | 'DELETE', url: string, body?: unknown): Promise<ApiResult> {
+export async function sendJson(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, body?: unknown): Promise<ApiResult> {
   let response: Response;
   try {
     response = await fetch(url, {

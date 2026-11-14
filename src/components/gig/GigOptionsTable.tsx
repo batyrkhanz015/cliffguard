@@ -1,7 +1,8 @@
-import type { GigCheckResult, GigOptionId } from '@/engine';
+import type { GigOptionId } from '@/engine';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { formatMoney } from '@/lib/money';
+import type { GigCheckView } from '@/lib/planView';
 import { RoughEstimateNote } from './RoughEstimateNote';
 
 const OPTION_LABELS: Record<GigOptionId, string> = {
@@ -13,7 +14,7 @@ const OPTION_LABELS: Record<GigOptionId, string> = {
 
 type GigOptionsTableProps = {
   /** Null until an offer has been checked. */
-  result: GigCheckResult | null;
+  result: GigCheckView | null;
   /** True while a check is in flight; the old result stays dimmed underneath. */
   loading: boolean;
   /** A failed check; shown with a retry. */
@@ -22,7 +23,7 @@ type GigOptionsTableProps = {
   onSeePlan: () => void;
 };
 
-function netOf(result: GigCheckResult, id: GigOptionId): number | null {
+function netOf(result: GigCheckView, id: GigOptionId): number | null {
   return result.options.find((option) => option.id === id)?.netFromGig ?? null;
 }
 

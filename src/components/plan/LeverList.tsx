@@ -1,7 +1,5 @@
 import type { LeverId } from '@/engine';
-
-/** One lever in the user's order. A disabled lever carries the reason it can't be used. */
-export type LeverRow = { leverId: LeverId; name: string; disabledReason: string | null };
+import type { LeverRow } from '@/lib/planView';
 
 type LeverListProps = {
   /** In the order the plan tries them. */
@@ -17,7 +15,7 @@ export function LeverList({ rows, onMove }: LeverListProps) {
   return (
     <ol className="space-y-2">
       {rows.map((row, index) => {
-        const usable = row.disabledReason === null;
+        const usable = row.eligible;
         return (
           <li
             key={row.leverId}
@@ -28,7 +26,7 @@ export function LeverList({ rows, onMove }: LeverListProps) {
             </span>
             <div className="min-w-0 flex-1">
               <p className={`font-semibold ${usable ? '' : 'text-gray-600'}`}>{row.name}</p>
-              {row.disabledReason !== null && <p className="mt-1 text-sm">{row.disabledReason}</p>}
+              {row.reason !== null && <p className="mt-1 text-sm">{row.reason}</p>}
             </div>
             <div className="flex gap-1">
               <button

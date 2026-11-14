@@ -1,18 +1,21 @@
-import type { Move, PlanResult } from '@/engine';
+import type { GigCheckResult, LeverId, Move, PlanResult } from '@/engine';
 
 /**
- * Stand-in for the server's `PlanSummary` (spec §D, `src/server/redact.ts`): a `PlanResult` whose
- * moves keep their name, deadline and liquidity but have the amounts and instructions removed.
- * Mirrors the server type for the UI until Task 6 is merged; then it is replaced by that type.
+ * The plan as the API sends it (spec §D). Types only, so client components can import them;
+ * `src/server/redact.ts` builds these values. Unpaid sessions see each move's lever, name,
+ * deadline and liquidity but not its amount, MAGI reduction, how-to or proof.
  */
-export type PlanSummaryMove = Omit<Move, 'amount' | 'magiReduction' | 'howTo' | 'proof'> & {
-  /** The lever's display name. */
-  name: string;
-  amount: null;
-  magiReduction: null;
-  howTo: null;
-  proof: null;
-  locked: true;
-};
 
-export type PlanSummary = Omit<PlanResult, 'moves'> & { moves: PlanSummaryMove[] };
+type PaidField = 'amount' | 'magiReduction' | 'howTo' | 'proof';
+
+export type LockedMove = Omit<Move, PaidField> & { [field in PaidField]: null } & { name: string; locked: true };
+export type UnlockedMove = Move & { name: string; locked: false };
+
+export type PlanSummary = Omit<PlanResult, 'moves'> & { moves: LockedMove[] };
+export type UnlockedPlan = Omit<PlanResult, 'moves'> & { moves: UnlockedMove[] };
+export type PlanView = PlanSummary | UnlockedPlan;
+
+export type GigCheckView = Omit<GigCheckResult, 'plan'> & { plan: PlanView };
+
+/** One row of the plan screen's lever list; names and eligibility reasons are not paid content. */
+export type LeverRow = { leverId: LeverId; name: string; eligible: boolean; reason: string | null };

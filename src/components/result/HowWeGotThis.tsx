@@ -7,7 +7,7 @@ type Line = readonly [label: string, value: string];
 function LineTable({ title, lines }: { title: string; lines: readonly Line[] }) {
   return (
     <div>
-      <h3 className="type-eyebrow text-violet">{title}</h3>
+      <p className="type-eyebrow text-violet">{title}</p>
       <dl className="mt-3 divide-y divide-hairline text-sm">
         {lines.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-4 py-2">

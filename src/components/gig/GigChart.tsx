@@ -104,13 +104,16 @@ export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartPr
         <input
           id="gig-size"
           type="range"
-          min={SLIDER_STEP}
+          min={0}
           max={maxGig}
           step={SLIDER_STEP}
           value={marked}
           onChange={(event) => onGigChange(Number(event.target.value))}
           className="mt-2 h-11 w-full accent-violet"
         />
+        {gigAmount > maxGig && (
+          <p className="mt-1 text-sm text-gray-600">This offer is beyond the {usd(maxGig)} the chart covers.</p>
+        )}
       </div>
     </figure>
   );
