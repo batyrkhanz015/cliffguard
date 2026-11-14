@@ -7,7 +7,7 @@ import { sendJson } from '@/lib/api';
 import type { CheckinReady, CheckinResult } from '@/lib/checkinView';
 import { parseMoney, parseSignedMoney } from '@/lib/money';
 import type { CheckinBody } from '@/lib/checkinRequest';
-import { clearPendingCheckin, readPendingCheckin, savePendingCheckin, subscribeCheckinInvalidation } from '@/lib/checkinRetry';
+import { readPendingCheckin, savePendingCheckin, settleCheckinAttempt, subscribeCheckinInvalidation } from '@/lib/checkinRetry';
 
 /** An uncertain retry keeps its original amounts and ID, including across page reloads. */
 export function CheckinForm({ data, onSaved }: { data: CheckinReady; onSaved: (result: CheckinResult) => void }) {
@@ -25,10 +25,6 @@ export function CheckinForm({ data, onSaved }: { data: CheckinReady; onSaved: (r
     });
     return () => { unsubscribe(); controller.current?.abort(); };
   }, [data.householdScope]);
-  function clearPending() {
-    pending.current = null; setUncertain(false);
-    clearPendingCheckin(false);
-  }
   function number(key: string, signed = false) { return (signed ? parseSignedMoney : parseMoney)(values[key] ?? '0'); }
   function remaining(key: string, old: number) { return expected[key] ?? String(Math.max(0, old - (number(key) ?? 0))); }
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -55,11 +51,13 @@ export function CheckinForm({ data, onSaved }: { data: CheckinReady; onSaved: (r
     const response = await sendJson('POST', '/api/checkin', body, { signal: request.signal });
     if (request.signal.aborted) return;
     controller.current = null; setBusy(false);
-    if (response.ok) { clearPending(); onSaved(response.data as CheckinResult); return; }
-    if (response.status === 0 || response.status >= 500) {
-      setUncertain(true); setError('We could not confirm the save. Retry this same submission; received income will be counted once.');
+    const stillUncertain = settleCheckinAttempt(response, uncertain);
+    setUncertain(stillUncertain);
+    if (!stillUncertain) pending.current = null;
+    if (response.ok) { onSaved(response.data as CheckinResult); return; }
+    if (stillUncertain) {
+      setError(response.status === 402 ? 'Your earlier check-in may have saved. Renew Year access from your plan, then retry this original submission.' : response.status === 429 ? 'Daily check-in limit reached. Your earlier check-in may have saved. Retry this original submission after the limit resets.' : 'We could not confirm the save. Retry this same submission; received income will be counted once.');
     } else {
-      clearPending();
       setError(response.status === 402 ? 'Year access is required. Open your plan to upgrade or renew.' : response.status === 429 ? 'Daily check-in limit reached. Try again later.' : response.status === 404 ? 'No saved household. Enter your numbers first.' : 'Your numbers could not be saved. Check the amounts, or refresh the page if your saved baseline changed.');
     }
   }

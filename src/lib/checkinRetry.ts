@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CheckinBodySchema, type CheckinBody } from './checkinRequest';
+import type { ApiResult } from './api';
 
 const RETRY_KEY = 'cliffguard:pending-checkin:v2';
 const LEGACY_RETRY_KEY = 'cliffguard:pending-checkin:v1';
@@ -32,6 +33,13 @@ export function savePendingCheckin(scope: string, body: CheckinBody): void {
     sessionStorage.removeItem(LEGACY_RETRY_KEY);
     sessionStorage.setItem(RETRY_KEY, JSON.stringify({ householdScope: scope, body }));
   } catch { /* The mounted form retains its original body when storage is unavailable. */ }
+}
+
+/** A gate/validation rejection of a retry cannot resolve an earlier uncertain save. */
+export function settleCheckinAttempt(response: ApiResult, wasUncertain: boolean): boolean {
+  const uncertain = !response.ok && (wasUncertain || response.status === 0 || response.status >= 500);
+  if (!uncertain) clearPendingCheckin(false);
+  return uncertain;
 }
 
 /** Reconcile successful reads without treating updatedAt as a household identity. */

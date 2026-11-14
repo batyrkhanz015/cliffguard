@@ -13,6 +13,7 @@ import { gigCheck } from '@/engine/server';
 import type { GigCheckView } from '@/lib/planView';
 import { DANI, DANI_GIG } from '@/samples/dani';
 import { ApiError } from './errors';
+import { explanationCacheKey } from './explanationCache';
 import { gigCheckView } from './redact';
 import { store } from './store';
 
@@ -123,6 +124,9 @@ export async function saveHousehold(record: HouseholdRecord): Promise<void> {
 
 export async function deleteHousehold(sid: string): Promise<void> {
   await store.del(keyFor(sid));
+  // Remove the household first so in-flight explanations cannot pass revalidation.
+  // A failed cache deletion propagates; the route must not claim deletion succeeded.
+  await store.del(explanationCacheKey(sid));
 }
 
 /** Paid and still within the purchase's last day. */

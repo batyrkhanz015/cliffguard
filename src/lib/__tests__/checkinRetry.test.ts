@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sendJson } from '../api';
-import { clearPendingCheckin, readPendingCheckin, savePendingCheckin, subscribeCheckinInvalidation } from '../checkinRetry';
+import { clearPendingCheckin, readPendingCheckin, savePendingCheckin, settleCheckinAttempt, subscribeCheckinInvalidation } from '../checkinRetry';
 import { replaceInput } from '@/server/household';
 import { householdView } from '@/server/redact';
 import { DANI } from '@/samples/dani';
@@ -17,6 +17,14 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('pending check-in household lifecycle', () => {
+  it.each([400, 402, 404, 429])('a %s rejection only releases the original body when no earlier save was uncertain', (status) => {
+    const response = { ok: false as const, status, code: 'REJECTED', issues: [], retryAfterSec: null };
+    savePendingCheckin('scope', body);
+    expect(settleCheckinAttempt(response, true)).toBe(true);
+    expect(readPendingCheckin('scope')).toEqual(body);
+    expect(settleCheckinAttempt(response, false)).toBe(false);
+    expect(readPendingCheckin('scope')).toBeNull();
+  });
   it('successful Delete my data clears persisted financial data and mounted retry state before a new household', async () => {
     const original = householdView(household(), '2026-11-15');
     savePendingCheckin(original.householdScope, body);

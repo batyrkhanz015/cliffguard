@@ -4,6 +4,9 @@ import { GET, POST } from '@/app/api/checkin/route';
 import { POST as estimate } from '@/app/api/checkin/estimate/route';
 import { GET as calendar } from '@/app/api/calendar.ics/route';
 import { estimate2027 } from '@/engine';
+import { sendJson } from '@/lib/api';
+import { readPendingCheckin, savePendingCheckin, settleCheckinAttempt } from '@/lib/checkinRetry';
+import { householdScope } from '@/lib/householdScope';
 import { HouseholdRecordSchema, replaceInput, requireHousehold, saveHousehold } from '../household';
 import { planExport } from '../planAccess';
 import { limit } from '../ratelimit';
@@ -24,7 +27,7 @@ beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(new Date('2026-11-15T12:00:00Z'));
   identity.sid = crypto.randomUUID(); vi.mocked(limit).mockResolvedValue({ ok: true, retryAfterSec: 0 });
 });
-afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.clearAllMocks(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.clearAllMocks(); });
 
 describe('Year-only check-in routes', () => {
   it('returns useful empty and locked reads without protected numbers; gates writes/calendar/estimate', async () => {
@@ -68,6 +71,43 @@ describe('Year-only check-in routes', () => {
     expect((await POST(request('/api/checkin', { ...body(), received: { ...body().received, capitalGains: 1 } }))).status).toBe(400);
     expect((await POST(request('/api/checkin', { ...body(), requestId: 'test-request-02', baselineVersion: original.updatedAt }))).status).toBe(400);
     expect(await requireHousehold(identity.sid)).toEqual(saved);
+  });
+  it.each(['rate limit', 'expired access'] as const)('retains a committed but lost response through %s, reload and same-ID recovery', async (gate) => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('sessionStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) });
+    await grant(); const original = await requireHousehold(identity.sid);
+    const scope = householdScope(original);
+    const submission = { ...body(), requestId: crypto.randomUUID(), baselineVersion: original.updatedAt };
+    savePendingCheckin(scope, submission);
+    let loseResponse = true;
+    const submitted: unknown[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+      const sent: unknown = JSON.parse(init.body as string); submitted.push(sent);
+      const response = await POST(request('/api/checkin', sent));
+      if (loseResponse) { loseResponse = false; expect(response.status).toBe(200); throw new Error('response lost after commit'); }
+      return response;
+    }));
+    const lost = await sendJson('POST', '/api/checkin', submission);
+    expect(lost).toMatchObject({ ok: false, status: 0 });
+    expect(settleCheckinAttempt(lost, false)).toBe(true);
+    const committed = await requireHousehold(identity.sid);
+    expect(committed.checkins).toHaveLength(1);
+    if (gate === 'rate limit') vi.mocked(limit).mockResolvedValue({ ok: false, retryAfterSec: 86400 });
+    else await saveHousehold({ ...committed, entitlement: { ...committed.entitlement!, validUntil: '2026-11-14' } });
+    const rejected = await sendJson('POST', '/api/checkin', readPendingCheckin(scope));
+    expect(rejected).toMatchObject({ ok: false, status: gate === 'rate limit' ? 429 : 402 });
+    expect(settleCheckinAttempt(rejected, true)).toBe(true);
+    // A page reload reconstructs only from persisted household-scoped data.
+    const recovered = readPendingCheckin(scope);
+    expect(recovered).toEqual(submission);
+    if (gate === 'rate limit') vi.mocked(limit).mockResolvedValue({ ok: true, retryAfterSec: 0 });
+    else await saveHousehold({ ...await requireHousehold(identity.sid), entitlement: committed.entitlement });
+    const replay = await sendJson('POST', '/api/checkin', recovered);
+    expect(replay).toMatchObject({ ok: true, data: { replayed: true, checkin: { id: submission.requestId } } });
+    expect(settleCheckinAttempt(replay, recovered !== null)).toBe(false);
+    expect(readPendingCheckin(scope)).toBeNull(); expect(storage.size).toBe(0);
+    expect(submitted).toEqual([submission, submission, submission]);
+    expect(await requireHousehold(identity.sid)).toEqual(committed);
   });
   it('validates unknown fields/amounts/adults, rejects foreign origins and enforces daily limits', async () => {
     await grant();

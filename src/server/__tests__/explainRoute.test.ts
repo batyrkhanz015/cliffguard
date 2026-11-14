@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DANI, DANI_GIG } from '@/samples/dani';
 import { POST } from '@/app/api/explain/route';
-import { requireHousehold, replaceInput, saveHousehold } from '../household';
+import { DELETE } from '@/app/api/household/route';
+import { deleteHousehold, loadHousehold, requireHousehold, replaceInput, saveHousehold } from '../household';
+import { explanationCacheKey } from '../explanationCache';
+import { endSession } from '../session';
 import { planExport } from '../planAccess';
 import { dailyCallKey } from '../claude/client';
 import { calculationExplanation, explanationPlanHash } from '../claude/explain';
@@ -9,7 +12,7 @@ import { limit } from '../ratelimit';
 import { store } from '../store';
 
 const identity = vi.hoisted(() => ({ sid: '' }));
-vi.mock('../session', () => ({ getSid: async () => identity.sid }));
+vi.mock('../session', () => ({ getSid: async () => identity.sid, endSession: vi.fn(async () => {}) }));
 vi.mock('../ratelimit', () => ({ limit: vi.fn(async () => ({ ok: true, retryAfterSec: 0 })) }));
 const output = { headline: 'Your plan', paragraphs: ['Review your income.', 'Use the listed moves.', 'Review with your tax preparer.'], moveNotes: [], caveats: [] };
 function reply() {
@@ -58,7 +61,7 @@ describe('explanation disclosure and cache', () => {
     const write = vi.spyOn(store, 'set');
     expect((await (await POST(request())).json()).source).toBe('claude');
     const { before, plan } = planExport(await requireHousehold(identity.sid), '2026-11-15');
-    expect(write).toHaveBeenCalledWith(`cg:explain:${identity.sid}:${explanationPlanHash(before, plan)}`, { ...output, source: 'claude' }, 86400);
+    expect(write).toHaveBeenCalledWith(explanationCacheKey(identity.sid), { hash: explanationPlanHash(before, plan), explanation: { ...output, source: 'claude' } }, 86400);
     expect((await (await POST(request())).json()).source).toBe('claude');
     expect(fetch).toHaveBeenCalledOnce();
     await saveHousehold({ ...await requireHousehold(identity.sid), lastGig: null });
@@ -88,12 +91,62 @@ describe('explanation disclosure and cache', () => {
     const response = await POST(request());
     if (change === 'kill') expect((await response.json()).source).toBe('template');
     else expect(response.status).toBe(change === 'access' ? 402 : 422);
+    expect(await store.get(explanationCacheKey(identity.sid))).toBeNull();
   });
   it('rejects corrupted cached output and never discloses record IDs', async () => {
     const { before, plan } = planExport(await requireHousehold(identity.sid), '2026-11-15');
-    await store.set(`cg:explain:${identity.sid}:${explanationPlanHash(before, plan)}`, { ...output, headline: '$4,321' });
+    await store.set(explanationCacheKey(identity.sid), { hash: explanationPlanHash(before, plan), explanation: { ...output, headline: '$4,321' } });
     const response = await POST(request()); const text = await response.text();
     expect(fetch).toHaveBeenCalledOnce(); expect(text).not.toContain('$4,321');
     expect(text).not.toContain(identity.sid); expect(text).not.toContain('demo_private');
+  });
+  it('replaces earlier plan hashes in one envelope and Delete my data removes every financial cache value', async () => {
+    const write = vi.spyOn(store, 'set');
+    await POST(request());
+    const key = explanationCacheKey(identity.sid);
+    const first = await store.get(key);
+    await saveHousehold({ ...await requireHousehold(identity.sid), lastGig: null });
+    await POST(request());
+    expect(await store.get(key)).not.toEqual(first);
+    const cacheWrites = write.mock.calls.filter(([writtenKey]) => writtenKey.startsWith('cg:explain:'));
+    expect(cacheWrites).toHaveLength(2);
+    expect(new Set(cacheWrites.map(([writtenKey]) => writtenKey))).toEqual(new Set([key]));
+    const response = await DELETE(new Request('http://localhost:3000/api/household', { method: 'DELETE' }));
+    expect(response.status).toBe(200); expect(await response.json()).toEqual({ ok: true });
+    expect(endSession).toHaveBeenCalledOnce();
+    expect(await loadHousehold(identity.sid)).toBeNull();
+    for (const [writtenKey] of cacheWrites) expect(await store.get(writtenKey)).toBeNull();
+  });
+  it('does not cache a provider result that completes after household deletion', async () => {
+    const write = vi.spyOn(store, 'set');
+    vi.stubGlobal('fetch', vi.fn(async () => { await deleteHousehold(identity.sid); return reply(); }));
+    expect((await POST(request())).status).toBe(404);
+    expect(write.mock.calls.filter(([key]) => key.startsWith('cg:explain:'))).toHaveLength(0);
+    expect(await store.get(explanationCacheKey(identity.sid))).toBeNull();
+  });
+  it('removes a late cache write when deletion finishes during awaited cache storage', async () => {
+    const set = store.set.bind(store); const key = explanationCacheKey(identity.sid);
+    vi.spyOn(store, 'set').mockImplementation(async (writeKey, value, ttl) => {
+      if (writeKey === key) {
+        await deleteHousehold(identity.sid);
+        expect(await store.get(key)).toBeNull();
+      }
+      await set(writeKey, value, ttl);
+    });
+    expect((await POST(request())).status).toBe(404);
+    expect(await store.get(key)).toBeNull();
+    expect(await loadHousehold(identity.sid)).toBeNull();
+  });
+  it('does not acknowledge deletion or expire the cookie when cache removal fails', async () => {
+    await POST(request()); const key = explanationCacheKey(identity.sid); const del = store.del.bind(store);
+    vi.spyOn(store, 'del').mockImplementation(async deletedKey => {
+      if (deletedKey === key) throw new Error('storage unavailable');
+      await del(deletedKey);
+    });
+    expect((await DELETE(new Request('http://localhost:3000/api/household', { method: 'DELETE' }))).status).toBe(500);
+    expect(endSession).not.toHaveBeenCalled(); expect(await store.get(key)).not.toBeNull();
+    vi.mocked(store.del).mockRestore();
+    expect((await DELETE(new Request('http://localhost:3000/api/household', { method: 'DELETE' }))).status).toBe(200);
+    expect(await store.get(key)).toBeNull(); expect(endSession).toHaveBeenCalledOnce();
   });
 });
