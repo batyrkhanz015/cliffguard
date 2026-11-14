@@ -6,16 +6,36 @@
 - **Product:** CliffGuard, "Take the gig. Keep your health subsidy." It is an ACA subsidy-cliff rescue planner for variable earners. Idea and decisions: `docs/handoff.md`. Approved spec: `docs/spec.md`. Build plan: `docs/plan.md` (13 tasks, read its "G2 judge changes" section). Pitch plan: `docs/pitch-handoff.md`.
 - **Repo:** local `/Users/batyrhanzharov/Desktop/business-cup-zimran`, working branch **`v1`**. **Private** GitHub: https://github.com/batyrkhanz015/cliffguard. Captain 00:00: push every reviewed checkpoint to `v1` and fast-forward `main` to it; teammate `ggoku13` works from GitHub issues (label `teammate`), branches off `v1`, PRs into `v1`.
 
-| Task | State | Commits |
+**Local Codex update — Nov 15:** the table below reflects the inspected local branches. T8–T11 work is on `codex/t8-t9`, previewed at `http://127.0.0.1:3002`; it has not been merged into the other LLM's active `v1` checkout or pushed to GitHub. The older handoff instructions below remain historical context; use this status and the feature integration notes for completed work.
+
+| Task | Current state | Evidence / remaining work |
 |---|---|---|
-| T1 engine core | ✅ complete, reviewed | e9a2e0d..1e8b166 |
-| T2 SLCSP, reconcile, diagnose | ✅ complete, reviewed | 1e8b166..bb4d331 |
-| T3 tax, levers, optimizer | ✅ complete, reviewed | 0be6361..e19deff |
-| T4 gig, alerts, deadlines, estimate, template | ✅ complete, reviewed (fix round 1 clean) | e19deff..bdf5f2a |
-| T5 app shell, landing, check form (zimran style) | ✅ complete, reviewed, **merged into v1** (f18ee42) | 1e8b166..be41d1f |
-| T6 server, session, store, routes | ⏳ builder (opus) dispatched 23:35 on v1, BASE f18ee42 | — |
-| T7 result, gig, plan screens | ⏳ **phase 1** (components + latest gate) builder (sonnet) in an isolated worktree, parallel with T6. **Phase 2** (pages wired to T6 routes) = resume the same builder after T6 merges | — |
-| T8–T11, T13 | not started. **T12 cut** (ledger ruling 23:40). **Captain 00:00: T8 = demo unlock (no Stripe) is the priority**; Stripe test checkout only if time remains | — |
+| T1 engine core | Complete, reviewed | Existing engine checkpoint |
+| T2 SLCSP, reconcile, diagnose | Complete, reviewed | Existing engine checkpoint |
+| T3 tax, levers, optimizer | Complete, reviewed | Existing engine checkpoint |
+| T4 gig, alerts, deadlines, estimate, template | Complete, reviewed | Existing engine checkpoint |
+| T5 shell, landing, questionnaire | Complete | Existing UI checkpoint; upload/demo additions on feature branch |
+| T6 server, session, store, routes | Implementation available on `v1` | `794f238`; consumed by this feature branch; owner review status unconfirmed |
+| T7 result, gig, plan screens | Other LLM's work; integration pending | Components in its worktree; connected result/plan pages absent from this preview |
+| T8 demo unlock, exact plan, proofs, export | Complete for no-payment demo, reviewed | `392e258` through `267ccd9`; real Stripe deferred; see `demo-access.md` |
+| T9 notice reading and confirmation | Implemented, reviewed; live-provider check pending | `434a987` plus fixes; clickable/drop upload and explicit no-key notice demo through `db4cd74`; see `notice-upload.md` |
+| T10 plan explanation | Complete, reviewed | `cb27b65` through `a8c3cc0`; calculation-based template works without a key; real provider quality check pending |
+| T11 check-ins, calendar, January estimate | Complete, reviewed | `0bac9a9` and `7105029`; deterministic and keyless; see `checkin-integration.md` |
+| T12 conversational what-if advisor | Deferred | Remains outside this implementation |
+| T13 final state/mobile audit and README | Pending | Final integration, connected-browser QA and release preparation remain |
+
+The notice demo never reads a selected file or makes an AI call. It is explicitly labeled fictional input. T10's no-key explanation uses real engine results, and remains labeled calculation-based. Add `ANTHROPIC_API_KEY` to the running server's `.env.local` and restart to enable the prepared live extraction/explanation paths; `CLAUDE_ENABLED=true` and the daily cap still apply. No key or payment is needed for the existing free Year/Rescue demo unlock.
+
+### Current local preview
+
+1. Open `http://127.0.0.1:3002/unlock`. If needed, load Dani's sample household.
+2. Choose **Unlock Year demo — free** (or upgrade the Rescue demo) to access every new feature without a payment or LLM key.
+3. Use **Explain my plan** for the calculation-based explanation. Open `/checkin` to update 2026 figures, see deltas/alerts/history, calculate the 2027 estimate or download the calendar.
+4. The header links and existing-household landing banner also lead to these pages. `/check?step=2` retains the clickable/drop notice upload and explicit offline notice demo.
+
+Verification on the completed implementation: lint, strict typecheck, **513 tests / 37 files**, production build, and actual local HTTP flow pass. HTTP checks covered access gates, template explanation, cliff-crossing alerts, duplicate/stale requests, unchanged saved plan state, exact fractional estimate floor, calendar dates/alarms, response allowlists, navigation and return-banner states. Audit sessions were deleted. Browser/mobile interaction and native-calendar import were not verified because no browser is connected; live Claude access/quality awaits a real API key. Existing T6 storage still lacks cross-request compare-and-set; cross-tab/server simultaneous whole-record writes need owner integration work. The client protects scoped sequential retries and deletion/replacement cleanup.
+
+Remaining: merge with the other LLM's T7 pages while preserving the documented API/serializer/saved-scenario contracts; verify live Claude when a key exists; finish T13 visual/state/README work and release checks. T12 and real Stripe remain deferred. No push or deployment was performed.
 
 ## 2. Resume steps, in order
 1. Check `git log v1`, `git worktree list` and the report files `task-6-report.md` / `task-7-report.md` before re-dispatching anything.
