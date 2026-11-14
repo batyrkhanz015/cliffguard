@@ -4,11 +4,10 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Toggle } from '@/components/ui/Toggle';
-import { moneyTextError, parseMoney, formatMoneyInput } from '@/lib/money';
+import type { GigOffer } from '@/lib/apiClient';
+import { formatMoneyInput, moneyTextError, parseMoney } from '@/lib/money';
 
 export const GIG_MAX = 500_000;
-
-export type GigOffer = { amount: number; canBillInJanuary: boolean };
 
 type GigInputProps = {
   /** The offer last checked; fills the form again after a reload. */

@@ -43,7 +43,7 @@ export async function sendJson(method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATC
   const payload: unknown = await response.json().catch(() => null);
   if (response.ok) {
     if ((url === '/api/household' && (method === 'PUT' || method === 'DELETE')) || (url === '/api/household/sample' && method === 'POST')) householdWriteSucceeded(method, payload);
-    if (url === '/api/plan' || url === '/api/gig-check') notifyPlanChanged();
+    if (url === '/api/plan' || url === '/api/gig-check' || url === '/api/demo-unlock') notifyPlanChanged();
     return { ok: true, data: payload };
   }
 
