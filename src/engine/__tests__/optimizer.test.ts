@@ -311,7 +311,7 @@ describe('server-only boundary', () => {
     expect(server.COSTLY_MULTIPLE).toBe(3);
   });
 
-  test.each(['optimizer.ts', 'levers.ts', 'server.ts'])('%s starts with the server-only guard', (file) => {
+  test.each(['optimizer.ts', 'levers.ts', 'server.ts', 'gig.ts'])('%s starts with the server-only guard', (file) => {
     const source = readFileSync(fileURLToPath(new URL(`../${file}`, import.meta.url)), 'utf8');
     expect(source.startsWith("import 'server-only';")).toBe(true);
   });

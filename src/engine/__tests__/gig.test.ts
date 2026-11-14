@@ -86,3 +86,28 @@ describe('gigCheck: spec §B F3c bill in January', () => {
 test('gig.ts is server-only: the server entry exports it', () => {
   expect(server.gigCheck).toBe(gigCheck);
 });
+
+describe('gigCheck: consistency', () => {
+  test.each([false, true])('the curve agrees with the plan option at the gig size (canBillInJanuary %s)', (flag) => {
+    const result = gigCheck(DANI, { amount: 12_000, canBillInJanuary: flag }, DANI_AS_OF);
+    const point = result.curve.find((p) => p.gig === 12_000);
+    expectDollars(point?.netWithPlan ?? NaN, optionOf(result, 'take_with_plan').netFromGig, 0.01);
+  });
+
+  test('incomeTaxSaved counts only the HSA deduction, not the deferred invoices or purchases', () => {
+    const { plan } = gigCheck(DANI, DANI_GIG, DANI_AS_OF);
+    expect(plan.totals.deferredToNextYear).toBe(3_000);
+    expect(plan.totals.cashCommitted).toBe(2_930);
+    // Only the $1,130 HSA deduction saves tax, at the 12% bracket.
+    expectDollars(plan.totals.incomeTaxSaved, 1_130 * 0.12, 0.01);
+  });
+
+  test('billing the gig in January: a plan that only defers income saves no income tax', () => {
+    const result = gigCheck(DANI, CAN_BILL_IN_JANUARY, DANI_AS_OF);
+    expect(result.plan.moves.map((m) => m.leverId)).toEqual(['invoiceTiming']);
+    expect(result.plan.totals.incomeTaxSaved).toBe(0);
+    const doNothing = optionOf(result, 'take_do_nothing').netFromGig;
+    const gained = result.plan.ptcAfter - result.plan.ptcBefore;
+    expect(optionOf(result, 'take_with_plan').netFromGig).toBeCloseTo(doNothing + gained, 6);
+  });
+});

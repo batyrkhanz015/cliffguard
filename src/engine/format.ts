@@ -14,3 +14,6 @@ export function formatDate(isoDate: string): string {
     timeZone: 'UTC',
   });
 }
+
+/** "1 move brings" / "3 moves bring". */
+export const movesBring = (count: number): string => (count === 1 ? '1 move brings' : `${count} moves bring`);

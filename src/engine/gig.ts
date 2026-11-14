@@ -1,6 +1,6 @@
 import 'server-only';
 import { diagnose, type Diagnosis } from './diagnose';
-import { usd } from './format';
+import { movesBring, usd } from './format';
 import { optimize } from './optimizer';
 import { TY2026 } from './rules/ty2026';
 import { federalTax, marginalRate, taxableIncome } from './tax';
@@ -65,12 +65,14 @@ function lossZoneFor(baseline: Baseline): GigCheckResult['lossZone'] {
   return { from, to };
 }
 
-function curveFor(baseline: Baseline): GigCheckResult['curve'] {
-  const { input, asOf, rules } = baseline;
+/** The rescue plan for a gig of this size. */
+const planFor = ({ input, asOf, rules }: Baseline, gig: Gig): PlanResult => optimize(input, { gig, asOf }, rules);
+
+function curveFor(baseline: Baseline, canBillInJanuary: boolean): GigCheckResult['curve'] {
   return Array.from({ length: CURVE_MAX / CURVE_STEP + 1 }, (_, i) => {
     const gig = i * CURVE_STEP;
     const assessment = assess(baseline, gig);
-    const plan = optimize(input, { gig: { amount: gig, canBillInJanuary: false }, asOf }, rules);
+    const plan = planFor(baseline, { amount: gig, canBillInJanuary });
     return { gig, netDoNothing: assessment.netDoNothing, netWithPlan: netWithPlan(assessment, plan) };
   });
 }
@@ -86,7 +88,7 @@ function planNotes(plan: PlanResult): string[] {
     case 'worth_it':
     case 'costly':
       return [
-        `${plan.moves.length} moves bring income back under the line and keep ${usd(plan.ptcAfter - plan.ptcBefore)} of credit.`,
+        `${movesBring(plan.moves.length)} income back under the line and keep ${usd(plan.ptcAfter - plan.ptcBefore)} of credit.`,
         `${usd(plan.totals.deferredToNextYear)} arrives in January; ${usd(plan.totals.cashCommitted)} goes into purchases, your HSA or retirement.`,
       ];
   }
@@ -104,7 +106,7 @@ export function gigCheck(input: HouseholdInput, gig: Gig, asOf: string, rules: R
   const baseline: Baseline = { input, base, asOf, rules };
   const assessment = assess(baseline, gig.amount);
   const { withGig, tax } = assessment;
-  const plan = optimize(input, { gig: { amount: gig.amount, canBillInJanuary: gig.canBillInJanuary }, asOf }, rules);
+  const plan = planFor(baseline, gig);
   const crossesCliff = !base.overCliff && withGig.overCliff;
 
   const options: GigCheckResult['options'] = [
@@ -151,7 +153,7 @@ export function gigCheck(input: HouseholdInput, gig: Gig, asOf: string, rules: R
     taxOnGig: tax,
     options,
     lossZone: lossZoneFor(baseline),
-    curve: curveFor(baseline),
+    curve: curveFor(baseline, gig.canBillInJanuary),
     plan,
     flags,
   };

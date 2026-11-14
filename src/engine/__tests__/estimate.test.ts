@@ -28,11 +28,16 @@ describe('estimate2027: spec §B F13', () => {
     expect(estimate2027(90_000, null, HOUSEHOLD).floor).toBe(90_000);
   });
 
-  test('property: no expected income ever yields a floor below it', () => {
-    for (let i = 0; i < 500; i += 1) {
-      const expected = Math.random() * 200_000;
-      expect(estimate2027(expected, plan, HOUSEHOLD).floor).toBeGreaterThanOrEqual(expected);
-      expect(estimate2027(expected, null, HOUSEHOLD).floor).toBeGreaterThanOrEqual(expected);
+  test('property: no expected income and no deferral ever yields a floor below the expected income', () => {
+    const plans = [null, plan, { ...plan, totals: { ...plan.totals, deferredToNextYear: 25_000 } }];
+    for (const candidate of plans) {
+      const deferred = candidate?.totals.deferredToNextYear ?? 0;
+      for (let expected = 0; expected <= 200_000; expected += 997) {
+        const { floor, headroom2027, cliff2027 } = estimate2027(expected, candidate, HOUSEHOLD);
+        expect(floor).toBe(expected + deferred);
+        expect(floor).toBeGreaterThanOrEqual(expected);
+        expect(headroom2027).toBe(cliff2027 - floor);
+      }
     }
   });
 });
@@ -100,5 +105,16 @@ describe('templateExplanation', () => {
       expect(ExplanationSchema.safeParse(explanation).success).toBe(true);
       expectOnlyInputNumbers(explanation, d);
     }
+  });
+});
+
+describe('templateExplanation: over the cliff with no advance credit', () => {
+  test('does not say "repay all $0"', () => {
+    const noAptc = { ...DANI, marketplace: { ...DANI.marketplace, aptcMonthly: 0 } };
+    const d = diagnose(noAptc, WITH_GIG);
+    expect(d.zone).toBe('over');
+    const text = templateExplanation(d, null).paragraphs.join(' ');
+    expect(text).not.toMatch(/repay all/);
+    expect(text).toMatch(/repay nothing/);
   });
 });

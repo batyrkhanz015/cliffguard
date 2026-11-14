@@ -1,5 +1,5 @@
 import type { Diagnosis } from './diagnose';
-import { formatDate, usd } from './format';
+import { formatDate, movesBring, usd } from './format';
 import type { Explanation, FlagCode, LeverId, Move, PlanResult } from './types';
 
 /** Static copy for the flags that change how far to trust the numbers. */
@@ -42,7 +42,11 @@ function headlineFor(d: Diagnosis): string {
 function situation(d: Diagnosis): string {
   const income = `Your projected income is ${usd(d.income.magi)} against a cliff of ${usd(d.cliff)}.`;
   if (d.zone === 'over') {
-    return `${income} Over the line you get no premium credit, so you would repay all ${usd(d.repayment)} of the advance credit you received.`;
+    const outcome =
+      d.repayment > 0
+        ? `so you would repay all ${usd(d.repayment)} of the advance credit you received`
+        : 'but you received no advance credit, so you would repay nothing';
+    return `${income} Over the line you get no premium credit, ${outcome}.`;
   }
   if (d.zone === 'below_100') return `${income} That is under 100% of the poverty line, where the Marketplace rules differ.`;
   const bill = d.repayment > 0 ? `You would repay ${usd(d.repayment)} at filing` : `You would repay nothing at filing`;
@@ -61,7 +65,7 @@ function planParagraph(plan: PlanResult | null): string | null {
       return null;
     case 'worth_it':
     case 'costly':
-      return `${plan.moves.length} moves bring income from ${usd(plan.magiBefore)} to ${usd(plan.magiAfter)} and cut the repayment from ${usd(plan.repaymentBefore)} to ${usd(plan.repaymentAfter)}.${plan.verdict === 'costly' ? ' The money tied up costs more than the credit it saves; weigh it before acting.' : ''}`;
+      return `${movesBring(plan.moves.length)} income from ${usd(plan.magiBefore)} to ${usd(plan.magiAfter)} and cut the repayment from ${usd(plan.repaymentBefore)} to ${usd(plan.repaymentAfter)}.${plan.verdict === 'costly' ? ' The money tied up costs more than the credit it saves; weigh it before acting.' : ''}`;
     case 'needs_retirement_moves':
       return 'Only retirement contributions get you under the line. Allow them to see the plan.';
     case 'not_worth_fighting':
