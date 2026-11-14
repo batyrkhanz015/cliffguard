@@ -1,41 +1,27 @@
 # Build handoff: resume here after `/clear`
 
-> **For the next Claude session (the orchestrator):** read this, then `CLAUDE.md`, then the ledger at `.superpowers/sdd/plan/progress.md`. Trust `git log` and the ledger over memory. Written about 20:40 on Nov 14, 2026 (+05). Hackathon deadline: **12:00 on Nov 15**; internal submit **11:00**.
+> **For the next Claude session (the orchestrator):** read this, then `CLAUDE.md`, then the ledger at `.superpowers/sdd/plan/progress.md`. Trust `git log` and the ledger over memory. Updated 23:40 on Nov 14, 2026 (+05). Hackathon deadline: **12:00 on Nov 15**; internal submit **11:00**.
 
 ## 1. Where things stand
 - **Product:** CliffGuard, "Take the gig. Keep your health subsidy." It is an ACA subsidy-cliff rescue planner for variable earners. Idea and decisions: `docs/handoff.md`. Approved spec: `docs/spec.md`. Build plan: `docs/plan.md` (13 tasks, read its "G2 judge changes" section). Pitch plan: `docs/pitch-handoff.md`.
-- **Repo:** local `/Users/batyrhanzharov/Desktop/business-cup-zimran`, working branch **`v1`**. **Private** GitHub: https://github.com/batyrkhanz015/cliffguard (`main` and `v1` pushed at commit 0be6361).
+- **Repo:** local `/Users/batyrhanzharov/Desktop/business-cup-zimran`, working branch **`v1`**. **Private** GitHub: https://github.com/batyrkhanz015/cliffguard. Captain 00:00: push every reviewed checkpoint to `v1` and fast-forward `main` to it; teammate `ggoku13` works from GitHub issues (label `teammate`), branches off `v1`, PRs into `v1`.
 
 | Task | State | Commits |
 |---|---|---|
 | T1 engine core | ✅ complete, reviewed | e9a2e0d..1e8b166 |
 | T2 SLCSP, reconcile, diagnose | ✅ complete, reviewed | 1e8b166..bb4d331 |
 | T3 tax, levers, optimizer | ✅ complete, reviewed | 0be6361..e19deff |
-| T4 gig, alerts, deadlines, estimate, template | ⏳ **fix round 1 DONE** (commit bdf5f2a, 282 tests). **Needs a scoped re-review** of f1b4281..bdf5f2a | e19deff..bdf5f2a |
-| T5 app shell, landing, check form (zimran style) | ✅ complete, reviewed. **Not merged yet**: branch `worktree-agent-a5c504a0dc483a35d` (worktree `.claude/worktrees/agent-a5c504a0dc483a35d`), commit be41d1f | 1e8b166..be41d1f |
-| T6–T13 | not started | — |
+| T4 gig, alerts, deadlines, estimate, template | ✅ complete, reviewed (fix round 1 clean) | e19deff..bdf5f2a |
+| T5 app shell, landing, check form (zimran style) | ✅ complete, reviewed, **merged into v1** (f18ee42) | 1e8b166..be41d1f |
+| T6 server, session, store, routes | ⏳ builder (opus) dispatched 23:35 on v1, BASE f18ee42 | — |
+| T7 result, gig, plan screens | ⏳ **phase 1** (components + latest gate) builder (sonnet) in an isolated worktree, parallel with T6. **Phase 2** (pages wired to T6 routes) = resume the same builder after T6 merges | — |
+| T8–T11, T13 | not started. **T12 cut** (ledger ruling 23:40). **Captain 00:00: T8 = demo unlock (no Stripe) is the priority**; Stripe test checkout only if time remains | — |
 
 ## 2. Resume steps, in order
-1. **T4 fix round 1 is done** (bdf5f2a). The fix report is appended to `.superpowers/sdd/plan/task-4-report.md`:
-   - `incomeTaxSaved` excludes deferral;
-   - `gigCheck` takes ~18 ms cold;
-   - with `canBillInJanuary`, `take_with_plan` = $8,413 (a deferral-only plan), which is expected.
-
-   Next: `bash <SK>/scripts/review-package docs/plan.md f1b4281 bdf5f2a`, then dispatch a **scoped re-review** (`<SK>/re-review-prompt.md`, code-reviewer, **sonnet**) with the 3 findings:
-     1. the curve vs option `canBillInJanuary` mismatch;
-     2. the "repay all $0" copy with `NO_APTC`;
-     3. the nondeterministic floor property test.
-
-     Also confirm that `incomeTaxSaved` excludes deferral, and note the `gigCheck` runtime.
-   - If it's not done and no agent is running, dispatch a fresh builder with the brief, report and findings.
-2. **Merge T5:** `git merge --no-ff worktree-agent-a5c504a0dc483a35d` into `v1`. Add `AGENTS.md` to `.gitignore` (`next dev` writes it). Run `npm run lint && npm run typecheck && npm test && npm run build`. Then remove the worktree.
-3. **T6 (server, session, store, routes).** Carry these into the dispatch:
-   - PUT preserves saved preferences.
-   - Move payloads include the lever `name` from `LEVER_COPY` (names aren't secret).
-   - Validate `asOf` as ISO and gig amount > 0 and finite.
-   - Cap `leverOrder` (max 6) and bound the `extra` deltas (±200k).
-   - The footer already calls `DELETE /api/household`.
-4. **T7:** result, gig and plan screens.
+1. Check `git log v1`, `git worktree list` and the report files `task-6-report.md` / `task-7-report.md` before re-dispatching anything.
+2. T6 done → review package f18ee42..HEAD → code-reviewer (sonnet) → fix loop.
+3. T7 phase 1 done → after T6 is reviewed, tell the T7 builder (or a fresh one with brief + report) to merge `v1` into its worktree branch and do phase 2. Then review the whole T7 range, merge the worktree branch into v1 with `--no-ff`, remove the worktree.
+4. Pending from the captain: (Stripe deferred — demo unlock first), `ANTHROPIC_API_KEY` for T9/T10, and **Upstash Redis** (`UPSTASH_REDIS_REST_URL`/`_TOKEN`) for any Vercel deploy (prod refuses the in-memory store).
 5. **G3 = localhost review, NOT a deploy.** Run `npm run dev` and give the captain http://localhost:3000. Optionally run `qa-tester` against localhost. **Deploy to Vercel only when the captain explicitly approves.**
 6. Then: T8 (Stripe test paywall, export), T11-lite (check-in, `.ics`, Jan 15 card, landing return banner), T13 (README, polish, plus the parked minors from the ledger), then a deploy **on approval**. After that: T9 (Claude notice extraction), T10 (grounded explanation), T12 (Q&A, optional).
 
