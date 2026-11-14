@@ -55,7 +55,7 @@ export async function explainPlan(d: Diagnosis, plan: PlanResult): Promise<PlanE
       const reserved = await Promise.race([reserveClaudeCall(), timedOut]);
       if (!reserved || controller.signal.aborted || Date.now() >= deadline) return fallback();
       const response = await createClaudeClient().beta.messages.parse({
-        model: 'claude-opus-5-5', max_tokens: 900,
+        model: 'claude-opus-5-5', max_tokens: 4000,
         betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
         thinking: { type: 'adaptive' },
         output_config: { effort: 'low', format: zodOutputFormat(ExplanationSchema) },

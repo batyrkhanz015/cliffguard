@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import { TY2026 } from '@/engine';
 import { todayAsOf } from './clock';
 import { ApiError } from './errors';
 import type { HouseholdRecord } from './household';
@@ -27,7 +28,7 @@ export function grantDemoAccess(
   const upgrade = active && existing.stripeSessionId.startsWith('demo_') && existing.product === 'rescue' && product === 'year';
   if (active && !upgrade) return { entitlement: existing, changed: false };
   let validUntil = product === 'rescue'
-    ? '2027-10-15'
+    ? TY2026.dates.sepExtended
     : todayAsOf(new Date(Date.parse(now) + 365 * 86_400_000));
   if (validUntil < asOf) throw new ApiError('PAYMENT_UNAVAILABLE', 503, 'Rescue demo access has ended. Try the Year demo.');
   if (upgrade && existing.validUntil > validUntil) validUntil = existing.validUntil;

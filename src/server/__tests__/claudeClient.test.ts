@@ -34,7 +34,7 @@ describe('real Anthropic SDK request safety', () => {
     expect(transport).toHaveBeenCalledOnce();
     const call = transport.mock.calls[0] as unknown as [RequestInfo, RequestInit];
     const body = JSON.parse(String(call[1].body));
-    expect(body).toMatchObject({ model: 'claude-opus-5-5', max_tokens: 1200, fallbacks: 'default', thinking: { type: 'adaptive' }, output_config: { effort: 'low', format: { type: 'json_schema' } } });
+    expect(body).toMatchObject({ model: 'claude-opus-5-5', max_tokens: 4000, fallbacks: 'default', thinking: { type: 'adaptive' }, output_config: { effort: 'low', format: { type: 'json_schema' } } });
     expect(body.tools).toBeUndefined();
     expect(body.messages).toHaveLength(1);
     expect(body.messages[0].content[0].text).toBe('<untrusted_document>');

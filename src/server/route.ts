@@ -7,14 +7,20 @@ type Handler = (request: Request) => Promise<Response>;
 /** JSON bodies here are a few KB; anything far larger is refused before parsing. */
 const MAX_BODY_CHARS = 32_000;
 
-/** Wraps a route handler so anything it throws becomes the spec §D error response. */
-export function route(handler: Handler): Handler {
+/**
+ * Wraps a route handler so anything it throws becomes the spec §D error response. `noStore` marks
+ * every response, errors included, as uncacheable for routes that return one household's data.
+ */
+export function route(handler: Handler, options: { noStore?: boolean } = {}): Handler {
   return async (request) => {
+    let response: Response;
     try {
-      return await handler(request);
+      response = await handler(request);
     } catch (error) {
-      return errorResponse(error);
+      response = errorResponse(error);
     }
+    if (options.noStore) response.headers.set('Cache-Control', 'no-store');
+    return response;
   };
 }
 

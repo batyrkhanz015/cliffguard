@@ -9,16 +9,18 @@ import { planExport } from '@/server/planAccess';
 import { limit } from '@/server/ratelimit';
 import { readJson, route } from '@/server/route';
 import { getSid } from '@/server/session';
-const handler = route(async request => {
+
+export const POST = route(async request => {
   requireSameOrigin(request, 'Open your estimate from this site.');
   const body = await readJson(request, z.strictObject({ expected2027: z.number().min(0).max(1_000_000_000) }));
-  const sid = await getSid(); const record = await requireHousehold(sid); const asOf = todayAsOf();
+  const sid = await getSid();
+  const record = await requireHousehold(sid);
+  const asOf = todayAsOf();
   requireYear(record, asOf);
   const rate = await limit('checkin-estimate', sid, 30, 86400);
-  if (!rate.ok) throw new ApiError('RATE_LIMITED', 429, 'Too many estimate requests today. Try again later.', { retryAfterSec: rate.retryAfterSec });
+  if (!rate.ok) {
+    throw new ApiError('RATE_LIMITED', 429, 'Too many estimate requests today. Try again later.', { retryAfterSec: rate.retryAfterSec });
+  }
   const { plan } = planExport(record, asOf);
   return Response.json({ ...estimate2027(body.expected2027, plan, record.input), deferredToNextYear: plan.totals.deferredToNextYear });
-});
-export async function POST(request: Request) {
-  const response = await handler(request); response.headers.set('Cache-Control', 'no-store'); return response;
-}
+}, { noStore: true });

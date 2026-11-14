@@ -33,7 +33,7 @@ export async function extractNotice(file: { bytes: Uint8Array; type: string }, s
     : { type: 'image', source: { type: 'base64', media_type: file.type as 'image/png' | 'image/jpeg' | 'image/webp', data } };
   try {
     const response = await createClaudeClient().beta.messages.parse({
-      model: 'claude-opus-5-5', max_tokens: 1200,
+      model: 'claude-opus-5-5', max_tokens: 4000,
       betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
       thinking: { type: 'adaptive' },
       output_config: { effort: 'low', format: zodOutputFormat(EligibilityNoticeExtractionSchema) },

@@ -39,7 +39,7 @@ describe('provider boundaries', () => {
     expect((await explainPlan(diagnosis, plan)).source).toBe('claude');
     const call = transport.mock.calls[0] as unknown as [RequestInfo, RequestInit];
     const body = JSON.parse(String(call[1].body));
-    expect(body).toMatchObject({ model: 'claude-opus-5-5', max_tokens: 900, output_config: { format: { type: 'json_schema' } } });
+    expect(body).toMatchObject({ model: 'claude-opus-5-5', max_tokens: 4000, output_config: { format: { type: 'json_schema' } } });
     expect(body.tools).toBeUndefined();
     expect(JSON.parse(body.messages[0].content)).toEqual({ diagnosis, plan });
     expect(body.system).toMatch(/hide income/);

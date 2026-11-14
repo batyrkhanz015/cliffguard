@@ -49,11 +49,9 @@ export const POST = route(async (request) => {
     const envelope = ExplanationCacheSchema.safeParse(await store.get(key));
     const cached = envelope.success && envelope.data.hash === hash ? validateExplanation(envelope.data.explanation, before, plan) : null;
     result = cached ? { ...cached, source: 'claude' } : await explainPlan(before, plan);
-    if (result.source === 'claude') {
-      // Configuration and budget also govern cached disclosures, not just new dispatches.
-      if (!(await claudeAvailable())) result = calculationExplanation(before, plan);
-      else shouldCache = !cached;
-    }
+    // Configuration and budget also govern cached disclosures, not just new dispatches.
+    if (result.source === 'claude' && !(await claudeAvailable())) result = calculationExplanation(before, plan);
+    else shouldCache = result.source === 'claude' && !cached;
   }
   // Check before persisting any provider result, then check again after awaited storage.
   // Deletion during a cache write can finish first; remove that late write before returning.
@@ -67,6 +65,5 @@ export const POST = route(async (request) => {
       throw error;
     }
   }
-  if (result.source === 'claude' && !(await claudeAvailable())) result = calculationExplanation(before, plan);
   return Response.json(result, { headers: { 'Cache-Control': 'no-store' } });
 });

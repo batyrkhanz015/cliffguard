@@ -31,20 +31,28 @@ export function applyCheckin(record: HouseholdRecord, rawBody: CheckinBody, asOf
   const body = CheckinBodySchema.parse(rawBody);
   z.iso.date().parse(asOf);
   const fingerprint = checkinFingerprint(body);
-  const id = body.requestId ?? `checkin_${createHash('sha256').update(`${record.updatedAt}:${record.checkins.at(-1)?.id ?? 'baseline'}:${fingerprint}:${asOf}`).digest('hex')}`;
+  const lastId = record.checkins.at(-1)?.id ?? 'baseline';
+  const derivedId = createHash('sha256').update(`${record.updatedAt}:${lastId}:${fingerprint}:${asOf}`).digest('hex');
+  const id = body.requestId ?? `checkin_${derivedId}`;
   const existing = record.checkins.find(checkin => checkin.id === id);
   if (existing) {
-    if (existing.requestFingerprint !== fingerprint) throw new ApiError('VALIDATION', 400, 'This request ID was already used with different amounts.');
+    if (existing.requestFingerprint !== fingerprint) {
+      throw new ApiError('VALIDATION', 400, 'This request ID was already used with different amounts.');
+    }
     // The saved input snapshot reproduces the original response even after later check-ins.
     const input = existing.projectionInput ?? record.input;
     const diagnosis = diagnose(input, { gig: null, asOf: existing.asOf });
     const alerts = computeAlerts(existing.baseline ?? null, diagnosis, existing.asOf);
     return { record, checkin: existing, diagnosis, alerts, replayed: true };
   }
-  if (body.baselineVersion && body.baselineVersion !== record.updatedAt) throw new ApiError('VALIDATION', 400, 'Your saved numbers changed. Refresh this page before entering a new check-in.');
+  if (body.baselineVersion && body.baselineVersion !== record.updatedAt) {
+    throw new ApiError('VALIDATION', 400, 'Your saved numbers changed. Refresh this page before entering a new check-in.');
+  }
   const active = new Set(record.input.adults.map(adult => adult.id));
   for (const amounts of [body.received.seByAdult, body.received.wagesByAdult, body.expectedRestAfter?.seByAdult ?? {}, body.expectedRestAfter?.wagesByAdult ?? {}]) {
-    if (Object.keys(amounts).some(id => !active.has(id as 'a' | 'b'))) throw new ApiError('VALIDATION', 400, 'A check-in adult is not in this household.');
+    if (Object.keys(amounts).some(id => !active.has(id as 'a' | 'b'))) {
+      throw new ApiError('VALIDATION', 400, 'A check-in adult is not in this household.');
+    }
   }
   const nextInput = structuredClone(record.input);
   const expected: Checkin['expectedRestAfter'] = { seByAdult: {}, wagesByAdult: {} };
@@ -61,12 +69,19 @@ export function applyCheckin(record: HouseholdRecord, rawBody: CheckinBody, asOf
     };
     expected.seByAdult[adult.id] = adult.selfEmploymentProfit.expectedRest;
     expected.wagesByAdult[adult.id] = adult.wages.expectedRest;
-    if (adult.selfEmploymentProfit.ytd + adult.selfEmploymentProfit.expectedRest > 1_000_000_000 || adult.wages.ytd + adult.wages.expectedRest > 1_000_000_000) throw new ApiError('VALIDATION', 400, 'Annual income exceeds the supported range.');
+    const annualSe = adult.selfEmploymentProfit.ytd + adult.selfEmploymentProfit.expectedRest;
+    const annualWages = adult.wages.ytd + adult.wages.expectedRest;
+    if (annualSe > 1_000_000_000 || annualWages > 1_000_000_000) {
+      throw new ApiError('VALIDATION', 400, 'Annual income exceeds the supported range.');
+    }
   }
   // Investments are annual forecasts: add only previously uncounted taxable receipts, once.
   nextInput.investments.capitalGainsNet += body.received.capitalGains;
   nextInput.investments.taxableInterest += body.received.interestOrDividends;
-  if (Math.abs(nextInput.investments.capitalGainsNet) > 1_000_000_000 || nextInput.investments.taxableInterest + nextInput.investments.dividends > 1_000_000_000) throw new ApiError('VALIDATION', 400, 'Annual investments exceed the supported range.');
+  const annualInterest = nextInput.investments.taxableInterest + nextInput.investments.dividends;
+  if (Math.abs(nextInput.investments.capitalGainsNet) > 1_000_000_000 || annualInterest > 1_000_000_000) {
+    throw new ApiError('VALIDATION', 400, 'Annual investments exceed the supported range.');
+  }
   const parsed = HouseholdInputSchema.safeParse(nextInput);
   if (!parsed.success) throw new ApiError('VALIDATION', 400, 'Updated household numbers are invalid.', { issues: parsed.error.issues });
   const before = diagnose(record.input, { gig: null, asOf });
@@ -78,7 +93,8 @@ export function applyCheckin(record: HouseholdRecord, rawBody: CheckinBody, asOf
     result: { magi: diagnosis.income.magi, headroom: diagnosis.headroom, repayment: diagnosis.repayment, alerts: alerts.map(alert => alert.code) },
     requestFingerprint: fingerprint, baseline, projectionInput: parsed.data,
   };
-  return { record: { ...record, input: parsed.data, checkins: [...record.checkins, checkin].slice(-24) }, checkin, diagnosis, alerts, replayed: false };
+  const checkins = [...record.checkins, checkin].slice(-24);
+  return { record: { ...record, input: parsed.data, checkins }, checkin, diagnosis, alerts, replayed: false };
 }
 
 /** Monthly due state uses New York's caller-supplied date; the household always remains TY2026. */
@@ -86,5 +102,6 @@ export function checkinSchedule(asOf: string, lastCheckin?: string) {
   const month = asOf.slice(0, 7);
   const next = new Date(`${month}-01T00:00:00Z`);
   next.setUTCMonth(next.getUTCMonth() + 1);
-  return { due: lastCheckin?.slice(0, 7) !== month, monthLabel: new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(new Date(`${asOf}T00:00:00Z`)), nextDate: next.toISOString().slice(0, 10) };
+  const monthLabel = new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(new Date(`${asOf}T00:00:00Z`));
+  return { due: lastCheckin?.slice(0, 7) !== month, monthLabel, nextDate: next.toISOString().slice(0, 10) };
 }
