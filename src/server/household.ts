@@ -128,8 +128,9 @@ type InputChange = { sid: string; source: HouseholdSource; input: HouseholdInput
 /**
  * The record after the user enters (or loads) a household's numbers. The session keeps its
  * purchase and its saved preferences (keep my cash, lever order) over the input's defaults.
- * The gig, plan progress and check-ins belong to one household: they carry over while the
- * source stays the same and start fresh when it changes, e.g. from the sample to the user's own.
+ * Manual and upload are entry methods for the same personal household, so switching between
+ * them preserves the gig, plan progress and check-ins. Only sample ↔ personal transitions
+ * start those fields fresh. Purchase and saved preferences survive either boundary.
  */
 export function replaceInput(existing: HouseholdRecord | null, change: InputChange): HouseholdRecord {
   const { sid, source, input, now } = change;
@@ -147,12 +148,13 @@ export function replaceInput(existing: HouseholdRecord | null, change: InputChan
       entitlement: null,
     };
   }
+  const changedHousehold = (existing.source === 'sample_dani') !== (source === 'sample_dani');
   return {
     ...existing,
     updatedAt: now,
     source,
     input: { ...input, preferences: existing.input.preferences },
-    ...(existing.source === source ? {} : { lastGig: null, planProgress: {}, checkins: [] }),
+    ...(changedHousehold ? { lastGig: null, planProgress: {}, checkins: [] } : {}),
   };
 }
 

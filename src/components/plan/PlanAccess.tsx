@@ -72,7 +72,7 @@ export function PlanAccess() {
         {state.missing && <Button variant="secondary" className="mt-4 sm:ml-3" onClick={() => { void loadSample(); }}>Try Dani’s family</Button>}
       </Card>}
       {state.kind === 'ready' && (!state.data.entitled
-        ? <Paywall plan={state.data.plan} demoEnabled={state.data.demoEnabled} onUnlocked={refresh} />
+        ? <Paywall plan={state.data.plan} demoEnabled={state.data.demoEnabled} onUnlocked={refresh} coordinator={coordinator} />
         : <>
           <Card>
             <p className="type-eyebrow text-violet">{state.data.access?.mode === 'demo' ? 'Demo unlocked · no payment taken' : 'Plan unlocked'}</p>
@@ -90,7 +90,7 @@ export function PlanAccess() {
           <PlanProgress key={state.revision} initial={state.data.progress} coordinator={coordinator}>
             {state.data.plan.moves.map((move) => !move.locked && <UnlockedMove key={`${move.leverId}-${move.adultId ?? 'household'}`} move={move} />)}
           </PlanProgress>
-          {state.data.access?.mode === 'demo' && state.data.access.product === 'rescue' && <Paywall plan={state.data.plan} demoEnabled={state.data.demoEnabled} onUnlocked={refresh} upgrade />}
+          {state.data.access?.mode === 'demo' && state.data.access.product === 'rescue' && <Paywall plan={state.data.plan} demoEnabled={state.data.demoEnabled} onUnlocked={refresh} coordinator={coordinator} upgrade />}
         </>)}
     </section>
   );

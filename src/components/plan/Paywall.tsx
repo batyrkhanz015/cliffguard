@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PlanView } from '@/lib/planView';
-import { sendJson } from '@/lib/api';
+import { requestDemoUnlock } from '@/lib/demoUnlock';
+import type { PlanCoordinator } from '@/lib/planCoordinator';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
-export function Paywall({ plan, demoEnabled, onUnlocked, upgrade = false }: {
-  plan: PlanView; demoEnabled: boolean; onUnlocked: () => Promise<void>; upgrade?: boolean;
+export function Paywall({ plan, demoEnabled, onUnlocked, coordinator, upgrade = false }: {
+  plan: PlanView; demoEnabled: boolean; onUnlocked: () => Promise<void>; coordinator: PlanCoordinator; upgrade?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<'year' | 'rescue' | null>(null);
@@ -19,17 +20,23 @@ export function Paywall({ plan, demoEnabled, onUnlocked, upgrade = false }: {
   async function unlock(product: 'year' | 'rescue') {
     setBusy(product);
     setError('');
-    const result = await sendJson('POST', '/api/demo-unlock', { product });
-    if (result.ok) {
-      await onUnlocked();
-      router.refresh();
-    } else {
-      setError(result.code === 'RATE_LIMITED'
-        ? `Unlock limit reached. Try again in ${result.retryAfterSec ?? 60} seconds.`
-        : result.code === 'NOT_FOUND' ? 'Enter your numbers or load Dani’s family first.'
-          : 'Demo unlock is unavailable right now. No payment was taken. Try again.');
+    try {
+      const result = await requestDemoUnlock(coordinator, product, onUnlocked);
+      if (result === null) {
+        setError('Your plan is updating. Wait for it to finish, then try unlocking again.');
+      } else if (result.ok) {
+        router.refresh();
+      } else {
+        setError(result.code === 'RATE_LIMITED'
+          ? `Unlock limit reached. Try again in ${result.retryAfterSec ?? 60} seconds.`
+          : result.code === 'NOT_FOUND' ? 'Enter your numbers or load Dani’s family first.'
+            : 'Demo unlock is unavailable right now. No payment was taken. Try again.');
+      }
+    } catch {
+      setError('Demo unlock could not finish. No payment was taken. Try again.');
+    } finally {
+      setBusy(null);
     }
-    setBusy(null);
   }
 
   return (
