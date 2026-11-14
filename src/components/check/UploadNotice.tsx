@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
-import { Field, INPUT_CLASS } from '@/components/ui/Field';
 import { EligibilityNoticeExtractionSchema, type EligibilityNoticeExtraction } from '@/lib/noticeExtraction';
 import { NoticeRequests } from '@/lib/noticeRequests';
 import { ExtractionConfirmCard } from './ExtractionConfirmCard';
@@ -38,12 +37,13 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
   const [requests] = useState(() => new NoticeRequests());
   const lastRequest = useRef<'file' | 'sample'>('file');
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropAreaRef = useRef<HTMLButtonElement>(null);
   const focusAfterCancel = useRef(false);
   useEffect(() => () => requests.cancel(), [requests]);
   useEffect(() => {
     if (state.kind === 'idle' && focusAfterCancel.current) {
       focusAfterCancel.current = false;
-      inputRef.current?.focus();
+      dropAreaRef.current?.focus();
     }
   }, [state.kind]);
 
@@ -72,7 +72,7 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
     return selected !== null;
   }
 
-  function dragEnter(event: DragEvent<HTMLDivElement>) {
+  function dragEnter(event: DragEvent<HTMLButtonElement>) {
     if (!event.dataTransfer.types.includes('Files')) return;
     event.preventDefault();
     if (state.kind === 'loading') return;
@@ -80,13 +80,13 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
     setDragging(true);
   }
 
-  function dragLeave(event: DragEvent<HTMLDivElement>) {
+  function dragLeave(event: DragEvent<HTMLButtonElement>) {
     event.preventDefault();
     dragDepth.current = Math.max(0, dragDepth.current - 1);
     if (dragDepth.current === 0) setDragging(false);
   }
 
-  function drop(event: DragEvent<HTMLDivElement>) {
+  function drop(event: DragEvent<HTMLButtonElement>) {
     event.preventDefault();
     dragDepth.current = 0;
     setDragging(false);
@@ -132,9 +132,17 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
     <section aria-label="Read an eligibility notice" className="space-y-4 rounded-md border border-hairline p-4">
       <p className="font-semibold">Upload your eligibility notice</p>
       <p className="text-sm text-gray-600">Optional. PDF, PNG, JPEG or WebP, up to 5 MB. Your notice is sent to Claude to read; CliffGuard does not store the file. Only confirmed values are used in your form; numbers are saved after you finish the check. You can always enter them manually.</p>
-      <div
-        role="group"
-        aria-label="Notice upload drop area"
+      <input ref={inputRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp" hidden disabled={state.kind === 'loading'}
+        aria-label="Eligibility notice file"
+        onChange={(event) => { chooseFiles(event.target.files); }} />
+      <button
+        ref={dropAreaRef}
+        id="notice-file"
+        type="button"
+        aria-label="Upload an eligibility notice"
+        aria-describedby="notice-drop-hint"
+        aria-disabled={state.kind === 'loading'}
+        onClick={() => { if (state.kind !== 'loading') inputRef.current?.click(); }}
         onDragEnter={dragEnter}
         onDragLeave={dragLeave}
         onDragOver={(event) => {
@@ -143,17 +151,15 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
           event.dataTransfer.dropEffect = state.kind === 'loading' ? 'none' : 'copy';
         }}
         onDrop={drop}
-        className={`rounded-md border-2 border-dashed p-5 transition-colors focus-within:border-violet ${dragging ? 'border-violet bg-violet/10' : 'border-gray-300 bg-white'} ${state.kind === 'loading' ? 'opacity-60' : ''}`}
+        className={`block w-full rounded-md border-2 border-dashed p-6 text-center transition-colors focus-visible:border-violet focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet ${dragging ? 'border-violet bg-violet/10' : 'border-gray-300 bg-white'} ${state.kind === 'loading' ? 'cursor-wait opacity-60' : 'cursor-pointer hover:border-violet hover:bg-violet/5'}`}
       >
-        <p id="notice-drop-hint" className="mb-4 text-center font-semibold text-gray-700">
-          {dragging ? 'Drop your notice here' : 'Drag and drop your notice here, or choose a file below'}
-        </p>
-        <Field id="notice-file" label="Choose a notice">
-          <input ref={inputRef} id="notice-file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" disabled={state.kind === 'loading'} className={INPUT_CLASS}
-            aria-describedby="notice-drop-hint"
-            onChange={(event) => { chooseFiles(event.target.files); }} />
-        </Field>
-      </div>
+        <span id="notice-drop-hint" className="block font-semibold text-gray-700">
+          {dragging ? 'Drop your notice here' : 'Drag and drop your notice here, or click to choose a file'}
+        </span>
+        <span role="status" className="mt-2 block break-words text-sm text-gray-600">
+          {file ? `Selected: ${file.name}` : 'PDF, PNG, JPEG or WebP, up to 5 MB'}
+        </span>
+      </button>
       <div className="flex flex-wrap gap-3">
         <Button variant="secondary" disabled={state.kind === 'loading' || !file} onClick={() => void read('file')}>Read notice</Button>
         <Button variant="quiet" disabled={state.kind === 'loading'} onClick={() => void read('sample')}>Use sample notice</Button>
