@@ -51,6 +51,10 @@ const CheckinSchema = z.object({
     interestOrDividends: Money,
   }),
   expectedRestAfter: z.object({ seByAdult: AmountsByAdult, wagesByAdult: AmountsByAdult }),
+  // Optional metadata keeps older T6 records readable and makes retries reproducible.
+  requestFingerprint: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  baseline: z.object({ magi: z.number(), headroom: z.number(), repayment: Money, zone: z.enum(['below_100', 'clear', 'near', 'over']) }).optional(),
+  projectionInput: HouseholdInputSchema.optional(),
   result: z.object({
     magi: z.number(),
     headroom: z.number(),

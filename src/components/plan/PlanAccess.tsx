@@ -88,6 +88,11 @@ export function PlanAccess() {
             <h3 className="text-lg font-bold">{state.data.plan.verdict === 'under_line' ? 'You’re under the line. No rescue needed.' : 'No actionable moves in this plan.'}</h3>
             <p className="mt-2 text-sm">{state.data.plan.verdict === 'under_line' ? 'Keep monitoring your projected income and Marketplace estimate as work comes in.' : 'Review the preview’s eligibility reasons and cash preference. Your preparer can help assess other options.'}</p>
           </Card>}
+          <Card>
+            <h3 className="text-lg font-bold">{state.data.access?.product === 'year' ? 'Keep your 2026 projection current' : 'Year preview: monthly check-ins and reminders'}</h3>
+            <p className="mt-2 text-sm">{state.data.access?.product === 'year' ? 'Log income as it lands, see computed alerts and prepare your January 15 estimate.' : 'Upgrade to Year for income check-ins, cliff alerts, calendar reminders and the January 15 estimate helper.'}</p>
+            <div className="mt-4 flex flex-wrap gap-3"><Link href="/checkin" className={buttonClasses('secondary')}>{state.data.access?.product === 'year' ? 'Start check-in' : 'Preview Year check-ins'}</Link>{state.data.access?.product === 'year' && <a href="/api/calendar.ics" className={buttonClasses('secondary')}>Add deadlines to calendar (.ics)</a>}</div>
+          </Card>
           <ExplainMyPlan key={state.revision} />
           <PlanProgress key={state.revision} initial={state.data.progress} coordinator={coordinator}>
             {state.data.plan.moves.map((move) => !move.locked && <UnlockedMove key={`${move.leverId}-${move.adultId ?? 'household'}`} move={move} />)}

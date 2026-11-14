@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata, Viewport } from "next";
 import { Inter, Inter_Tight, Silkscreen } from "next/font/google";
 import { Footer } from "@/components/Footer";
@@ -24,8 +25,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${interTight.variable} ${silkscreen.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <header className="bg-night">
-          <div className="mx-auto w-full max-w-6xl px-4 py-3 sm:px-6">
+          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <Logo />
+            <nav aria-label="Main" className="flex gap-4 text-sm font-semibold text-white"><Link href="/unlock" className="underline">My plan</Link><Link href="/checkin" className="underline">Check-in</Link></nav>
           </div>
         </header>
         <div className="flex flex-1 flex-col">{children}</div>

@@ -3,6 +3,8 @@ import type { GigCheckResult, Move, PlanResult } from '@/engine';
 import { LEVER_COPY } from '@/engine/server';
 import type { GigCheckView, LockedMove, PlanSummary, PlanView, UnlockedPlan } from '@/lib/planView';
 import type { HouseholdRecord } from './household';
+import type { CheckinView } from '@/lib/checkinView';
+import { todayAsOf } from './clock';
 
 /** What the browser may see of the server's results (spec §D). Pure functions. */
 
@@ -43,10 +45,19 @@ export const gigCheckView = (gig: GigCheckResult, entitled: boolean): GigCheckVi
   plan: planView(gig.plan, entitled),
 });
 
-export type HouseholdView = Omit<HouseholdRecord, 'sid'>;
+export type HouseholdView = Omit<HouseholdRecord, 'sid' | 'checkins' | 'entitlement'> & {
+  checkins: CheckinView[];
+  entitlement: { product: 'rescue' | 'year'; validUntil: string } | null;
+};
 
-/** The record without its session id: the cookie is httpOnly, so page scripts never see the id. */
-export const householdView = (record: HouseholdRecord): HouseholdView => ({
+/** Retry fingerprints and calculation snapshots stay on the server. */
+export function publicCheckin(checkin: HouseholdRecord['checkins'][number]): CheckinView {
+  const { id, asOf, received, expectedRestAfter, result, baseline } = checkin;
+  return { id, asOf, received, expectedRestAfter, result, ...(baseline ? { baseline } : {}) };
+}
+
+/** Public household fields only; Year history needs active access even through legacy endpoints. */
+export const householdView = (record: HouseholdRecord, asOf: string = todayAsOf()): HouseholdView => ({
   version: record.version,
   createdAt: record.createdAt,
   updatedAt: record.updatedAt,
@@ -54,6 +65,6 @@ export const householdView = (record: HouseholdRecord): HouseholdView => ({
   input: record.input,
   lastGig: record.lastGig,
   planProgress: record.planProgress,
-  checkins: record.checkins,
-  entitlement: record.entitlement,
+  checkins: record.entitlement?.product === 'year' && record.entitlement.validUntil >= asOf ? record.checkins.map(publicCheckin) : [],
+  entitlement: record.entitlement ? { product: record.entitlement.product, validUntil: record.entitlement.validUntil } : null,
 });

@@ -1,4 +1,8 @@
 import Link from 'next/link';
+import { loadHousehold } from '@/server/household';
+import { getSid } from '@/server/session';
+import { todayAsOf } from '@/server/clock';
+import { checkinSchedule } from '@/server/checkin';
 import { CliffIllustration } from '@/components/landing/CliffIllustration';
 import { PixelSquares } from '@/components/landing/PixelSquares';
 import { RuleChanges } from '@/components/landing/RuleChanges';
@@ -83,9 +87,12 @@ function Cross() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const household = await loadHousehold(await getSid());
+  const schedule = household ? checkinSchedule(todayAsOf(), household.checkins.at(-1)?.asOf) : null;
   return (
     <main>
+      {schedule && <aside className="bg-air px-4 py-4 text-center text-sm"><span className="font-semibold">Welcome back. {schedule.due ? `Your ${schedule.monthLabel} check-in is due.` : `Your next check-in is ${schedule.nextDate}.`}</span>{' '}<Link href="/checkin" className="font-semibold text-violet underline">Open your 2026 check-in</Link></aside>}
       <section className="relative overflow-hidden bg-night text-white">
         <div
           aria-hidden
