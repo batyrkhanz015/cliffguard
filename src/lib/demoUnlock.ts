@@ -1,4 +1,5 @@
 import { sendJson, type ApiResult } from './api';
+import { notifyAccessChanged } from './planEvents';
 import type { PlanCoordinator } from './planCoordinator';
 
 /** Uses the panel's proof/read exclusion; null means busy and no request was sent. */
@@ -13,6 +14,9 @@ export async function requestDemoUnlock(
   });
   if (!accepted) return null;
   // The refresh uses the same queue: release the mutation before waiting for that read.
-  if (outcome.result?.ok) await onUnlocked();
+  if (outcome.result?.ok) {
+    notifyAccessChanged();
+    await onUnlocked();
+  }
   return outcome.result;
 }

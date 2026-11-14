@@ -28,7 +28,7 @@ function retryAfter(response: Response): number | null {
   return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : null;
 }
 
-export async function sendJson(method: 'POST' | 'PUT' | 'DELETE' | 'PATCH', url: string, body?: unknown, options?: { headers?: Record<string, string>; signal?: AbortSignal }): Promise<ApiResult> {
+export async function sendJson(method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH', url: string, body?: unknown, options?: { headers?: Record<string, string>; signal?: AbortSignal; notify?: boolean }): Promise<ApiResult> {
   let response: Response;
   try {
     response = await fetch(url, {
@@ -43,7 +43,7 @@ export async function sendJson(method: 'POST' | 'PUT' | 'DELETE' | 'PATCH', url:
   const payload: unknown = await response.json().catch(() => null);
   if (response.ok) {
     if ((url === '/api/household' && (method === 'PUT' || method === 'DELETE')) || (url === '/api/household/sample' && method === 'POST')) householdWriteSucceeded(method, payload);
-    if (url === '/api/plan' || url === '/api/gig-check') notifyPlanChanged();
+    if ((url === '/api/plan' || url === '/api/gig-check') && options?.notify !== false) notifyPlanChanged();
     return { ok: true, data: payload };
   }
 
