@@ -102,7 +102,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 - Privacy: no names or SSNs. Uploads are processed in memory, never stored. "Delete my data" is one click.
 - Education, not tax advice. A "Tax-preparer export" gives a Form 8962 preview and the proof list.
 
-**Visual:** Flow diagram: Documents -> Claude (reads) -> **Rules engine (math, tested)** -> Claude (explains, validated) -> User. Beside it, a screenshot of the test run (`npm test`: all passing) and the repo link `[GITHUB URL]`.
+**Visual:** Flow diagram: Documents -> Claude (reads) -> **Rules engine (math, tested)** -> Claude (explains, validated) -> User. Beside it, a screenshot of the test run (`npm test`: all passing) and the repo link `https://github.com/batyrkhanz015/cliffguard`.
 
 **Speaker notes:** If we were a dollar off TurboTax you should not trust us, so the math is plain code tested against published IRS, KFF and Morkel cases. The AI reads documents and explains; it is not allowed to invent a number. The jury can read the repo: engine in `src/engine/`, tests in `src/engine/__tests__`.
 
@@ -171,7 +171,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 ## Slide 10. Try it now, no login. Free diagnosis, $79 to keep watching
 
 - **Live:** [LIVE URL] (QR code). Click **Try Dani's family**. Phone-width tested.
-- **Repo:** [GITHUB URL]. Engine, 553 tests, README with architecture. Built in 24 hours with a 7-agent Claude Code team (researcher, strategist, judge, builder, code reviewer, QA, pitch writer). See `CLAUDE.md`.
+- **Repo:** https://github.com/batyrkhanz015/cliffguard. Engine, 553 tests, README with architecture. Built in 24 hours with a 7-agent Claude Code team (researcher, strategist, judge, builder, code reviewer, QA, pitch writer). See `CLAUDE.md`.
 - **Why now:** 2026 is the first tax year with an uncapped cliff. Dec 31 ends the cheapest moves, open enrollment runs to Jan 15, and the first uncapped returns land Feb-Apr 2027.
 - **Next:** Stripe checkout live, the Reddit-quote evidence, then the first 2027-season SEO pages. Ask: `[ASK: feedback / pilot CPAs / intros to freelancer communities]`.
 - Team: `[TEAM NAMES]`
@@ -204,11 +204,11 @@ Do not say "retainer" or "ask the client to hold a check": invoice timing covers
 
 ## B. Claims and placeholders still open
 
-- `[LIVE URL]`, `[GITHUB URL]`, `[TEAM NAMES]`, `[ASK]`: not yet known.
+- `[LIVE URL]`, `https://github.com/batyrkhanz015/cliffguard`, `[TEAM NAMES]`, `[ASK]`: not yet known.
 - `[QUOTE 1-3 from research/quotes.md]`: file absent. The three quotes used on slide 3 are sourced from `research/track-01-money.md` (KFF Health News, ObamacareFacts), not Reddit.
 - Screenshots in `docs/screenshots/` not present when this deck was written.
 - Unsourced (assumptions, labelled on slides): CAC by channel, renewal 55%, 8% paying, 1.7 people per household, Income Guard payers and price, B2B2C seats, 1099-earner pool (needs a BLS/Upwork cite), 2026 thresholds for each Income Guard cliff.
 - Ranked competitor funding (Stride $47M, Instead $15M) is in `research/track-01-money.md` but not shown on slides.
-- "553 tests": README currently says 537; confirm before export.
+- Test count: 553 (README matches as of 06:15).
 - Dani's figures for "$128,599 vs $128,601" repayment ($2,350 vs $9,342) from the handoff are not used; the deck uses $1,697 and $9,342 from the spec.
 - Spec s8 still lists LTV ~$134, 3.8x, and ACA wedge 250k payers x $79 = $20M, which exceeds the $12-17M ceiling. The deck uses the handoff's $137, 3.9x and 200k payers.
