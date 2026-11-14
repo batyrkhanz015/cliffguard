@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, type ChangeEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Field, INPUT_CLASS } from '@/components/ui/Field';
 import { US_STATE_CODES } from '@/engine/types';
-import { EligibilityNoticeExtractionSchema, extractionWarnings, type EligibilityNoticeExtraction } from '@/lib/noticeExtraction';
+import { EligibilityNoticeExtractionSchema, extractionWarnings, type EligibilityNoticeExtraction, type NoticeSource } from '@/lib/noticeExtraction';
 import { parseMoney } from '@/lib/money';
 import { US_STATE_NAMES } from '@/lib/usStates';
 
@@ -30,8 +30,9 @@ function readValue(field: NoticeField, value: string): string | number | null {
   return value;
 }
 
-export function ExtractionConfirmCard({ extraction, onConfirm, onCancel }: {
+export function ExtractionConfirmCard({ extraction, source = 'upload', onConfirm, onCancel }: {
   extraction: EligibilityNoticeExtraction;
+  source?: NoticeSource;
   onConfirm: (notice: EligibilityNoticeExtraction) => void;
   onCancel: () => void;
 }) {
@@ -79,8 +80,10 @@ export function ExtractionConfirmCard({ extraction, onConfirm, onCancel }: {
         }
       }}
     >
-      <h3 id="notice-confirm-heading" ref={heading} tabIndex={-1} className="text-xl font-bold">Check what we read</h3>
-      <p className="text-sm">Compare every value with your notice. Edit anything that needs correcting. Blank fields stay available for manual entry. Nothing is saved here.</p>
+      <h3 id="notice-confirm-heading" ref={heading} tabIndex={-1} className="text-xl font-bold">{source === 'demo' ? 'Review demo notice values' : 'Check what we read'}</h3>
+      <p className="text-sm">{source === 'demo'
+        ? 'Demo only. These are fictional values from the bundled sample notice. No file was read and no AI call was made. Edit the values to try the form. Nothing is saved here.'
+        : 'Compare every value with your notice. Edit anything that needs correcting. Blank fields stay available for manual entry. Nothing is saved here.'}</p>
       <div role="note" className="space-y-2 text-sm text-gray-700">
         {warnings.map((warning, index) => <p key={index}>{warning}</p>)}
       </div>
@@ -126,7 +129,7 @@ export function ExtractionConfirmCard({ extraction, onConfirm, onCancel }: {
       })}
       <p className="text-sm">Filing status and who your plan covers still need your answers. A notice from another year may have different figures.</p>
       <div className="flex flex-wrap gap-3">
-        <Button onClick={confirm}>Confirm and use these</Button>
+        <Button onClick={confirm}>{source === 'demo' ? 'Use these demo values' : 'Confirm and use these'}</Button>
         <Button variant="secondary" onClick={onCancel}>Cancel</Button>
       </div>
     </section>

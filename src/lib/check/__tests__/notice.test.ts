@@ -1,7 +1,11 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { confirmNotice, manualDraftState, noticeDraftPatch, noticeSaveHeaders } from '../notice';
 import { draftFromInput, EMPTY_DRAFT } from '../draft';
-import { DANI } from '@/samples/dani';
+import { DANI, DANI_AS_OF } from '@/samples/dani';
+import { demoNotice } from '@/samples/demoNotice';
+import { EligibilityNoticeExtractionSchema } from '@/lib/noticeExtraction';
+import { validateDraft } from '../validate';
+import { diagnose } from '@/engine/diagnose';
 import { NOTICE } from '@/test/noticeFixture';
 import { sendJson } from '@/lib/api';
 import { NoticeRequests } from '@/lib/noticeRequests';
@@ -40,6 +44,31 @@ describe('confirmed notice draft and provenance', () => {
     expect(new Headers(transport.mock.calls[0]?.[1]?.headers).get('x-cliffguard-input-source')).toBeNull();
     await sendJson('PUT', '/api/household', DANI, { headers: noticeSaveHeaders('upload') });
     expect(new Headers(transport.mock.calls[1]?.[1]?.headers).get('x-cliffguard-input-source')).toBe('upload');
+  });
+  it('runs the offline demo through confirmation, validation and real calculations without network calls', () => {
+    const transport = vi.fn<typeof fetch>(); vi.stubGlobal('fetch', transport);
+    const notice = EligibilityNoticeExtractionSchema.parse(demoNotice());
+    const confirmed = confirmNotice(manualDraftState(draftFromInput(DANI)), notice, 'demo');
+    const validated = validateDraft(confirmed.draft);
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) throw new Error('The demo must produce a valid household');
+    const scenario = { gig: null, asOf: DANI_AS_OF };
+    expect(diagnose(validated.input, scenario)).toEqual(diagnose(DANI, scenario));
+    expect(confirmed.demoNoticeApplied).toBe(true);
+    expect(confirmed.inputSource).toBe('manual');
+    expect(noticeSaveHeaders(confirmed.inputSource)).toEqual({});
+    expect(transport).not.toHaveBeenCalled();
+  });
+  it('keeps demo values distinct from uploaded data and clears the demo label on replacement', () => {
+    const uploaded = confirmNotice(manualDraftState(draftFromInput(DANI)), NOTICE);
+    const demo = confirmNotice(uploaded, demoNotice(), 'demo');
+    expect(demo.draft.adults).toBe(uploaded.draft.adults);
+    expect(demo.demoNoticeApplied).toBe(true);
+    expect(noticeSaveHeaders(demo.inputSource)).toEqual({});
+    const replaced = confirmNotice(demo, NOTICE, 'upload');
+    expect(replaced.demoNoticeApplied).toBe(false);
+    expect(noticeSaveHeaders(replaced.inputSource)).toEqual({ 'x-cliffguard-input-source': 'upload' });
+    expect(manualDraftState(draftFromInput(DANI)).demoNoticeApplied).toBe(false);
   });
 });
 describe('notice request lifecycle', () => {

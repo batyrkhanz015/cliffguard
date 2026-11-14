@@ -17,7 +17,7 @@ import {
   type StepNumber,
   type StepProps,
 } from '@/lib/check/draft';
-import type { EligibilityNoticeExtraction } from '@/lib/noticeExtraction';
+import type { EligibilityNoticeExtraction, NoticeSource } from '@/lib/noticeExtraction';
 import { confirmNotice, manualDraftState, noticeSaveHeaders } from '@/lib/check/notice';
 import { MFS_UNSUPPORTED, errorsForStep, firstStepWithError, validateDraft } from '@/lib/check/validate';
 import { DANI } from '@/samples/dani';
@@ -82,8 +82,8 @@ export function CheckForm({ initialStep }: { initialStep: StepNumber }) {
   function setDraft(update: CheckDraft | ((current: CheckDraft) => CheckDraft)) {
     setFormState((current) => ({ ...current, draft: typeof update === 'function' ? update(current.draft) : update }));
   }
-  function confirmExtraction(notice: EligibilityNoticeExtraction) {
-    setFormState((current) => confirmNotice(current, notice));
+  function confirmExtraction(notice: EligibilityNoticeExtraction, source: NoticeSource) {
+    setFormState((current) => confirmNotice(current, notice, source));
     setServerErrors({});
     setFilledSample(false);
   }
@@ -221,7 +221,9 @@ export function CheckForm({ initialStep }: { initialStep: StepNumber }) {
           </Button>
         </div>
         <p role="status" className="mt-2 text-sm text-gray-600">
-          {filledSample ? "Dani's sample numbers are filled in. Change anything you like." : ''}
+          {formState.demoNoticeApplied
+            ? 'Demo notice values are filled in. These are fictional sample values; replace them with your own for a personal check.'
+            : filledSample ? "Dani's sample numbers are filled in. Change anything you like." : ''}
         </p>
         <CheckProgress step={step} />
 

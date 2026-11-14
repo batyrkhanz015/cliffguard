@@ -1,4 +1,4 @@
-import type { EligibilityNoticeExtraction } from '@/lib/noticeExtraction';
+import type { EligibilityNoticeExtraction, NoticeSource } from '@/lib/noticeExtraction';
 import { formatMoneyInput } from '@/lib/money';
 import type { CheckDraft } from './draft';
 
@@ -14,11 +14,15 @@ export function noticeDraftPatch(notice: EligibilityNoticeExtraction): Partial<C
   return patch;
 }
 
-export type NoticeDraftState = { draft: CheckDraft; inputSource: 'manual' | 'upload' };
-export function manualDraftState(draft: CheckDraft): NoticeDraftState { return { draft, inputSource: 'manual' }; }
-export function confirmNotice(state: NoticeDraftState, notice: EligibilityNoticeExtraction): NoticeDraftState {
+export type NoticeDraftState = { draft: CheckDraft; inputSource: 'manual' | 'upload'; demoNoticeApplied: boolean };
+export function manualDraftState(draft: CheckDraft): NoticeDraftState { return { draft, inputSource: 'manual', demoNoticeApplied: false }; }
+export function confirmNotice(state: NoticeDraftState, notice: EligibilityNoticeExtraction, source: NoticeSource = 'upload'): NoticeDraftState {
   const patch = noticeDraftPatch(notice);
-  return Object.keys(patch).length === 0 ? state : { draft: { ...state.draft, ...patch }, inputSource: 'upload' };
+  return Object.keys(patch).length === 0 ? state : {
+    draft: { ...state.draft, ...patch },
+    inputSource: source === 'demo' ? 'manual' : 'upload',
+    demoNoticeApplied: source === 'demo',
+  };
 }
 export function noticeSaveHeaders(source: NoticeDraftState['inputSource']): Record<string, string> {
   return source === 'upload' ? { 'x-cliffguard-input-source': 'upload' } : {};

@@ -3,17 +3,19 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
-import { EligibilityNoticeExtractionSchema, type EligibilityNoticeExtraction } from '@/lib/noticeExtraction';
+import { EligibilityNoticeExtractionSchema, type EligibilityNoticeExtraction, type NoticeSource } from '@/lib/noticeExtraction';
 import { NoticeRequests } from '@/lib/noticeRequests';
+import { demoNotice } from '@/samples/demoNotice';
 import { ExtractionConfirmCard } from './ExtractionConfirmCard';
 
 const Reply = z.object({ extraction: EligibilityNoticeExtractionSchema, confirmed: z.literal(false) });
-type UploadState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string; canRetry: boolean } | { kind: 'confirm'; extraction: EligibilityNoticeExtraction };
+type UploadState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string; canRetry: boolean } | { kind: 'confirm'; extraction: EligibilityNoticeExtraction; source: NoticeSource };
 
 function failureMessage(code: unknown, retry: string | null): string {
   if (code === 'NOT_RECOGNIZED') return "This doesn't look like a Marketplace eligibility notice. Enter the numbers below.";
   if (code === 'FILE_TOO_LARGE') return 'Choose one file of 5 MB or less. You can also enter the numbers below.';
   if (code === 'UNSUPPORTED_FILE_TYPE') return 'Choose a PDF, PNG, JPEG or WebP notice. You can also enter the numbers below.';
+  if (code === 'CLAUDE_UNAVAILABLE') return 'Notice reading is unavailable. Try the demo notice or enter the numbers below.';
   if (code === 'RATE_LIMITED') {
     const seconds = Number(retry);
     return Number.isFinite(seconds) && seconds > 0 ? `Upload limit reached. Try in ${Math.ceil(seconds / 60)} min, or enter the numbers below.` : 'Upload limit reached. Try later or enter the numbers below.';
@@ -29,7 +31,7 @@ function fileError(file: File): string | null {
   return null;
 }
 
-export function UploadNotice({ onConfirm }: { onConfirm: (extraction: EligibilityNoticeExtraction) => void }) {
+export function UploadNotice({ onConfirm }: { onConfirm: (extraction: EligibilityNoticeExtraction, source: NoticeSource) => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [state, setState] = useState<UploadState>({ kind: 'idle' });
   const [dragging, setDragging] = useState(false);
@@ -51,6 +53,14 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
     requests.cancel();
     focusAfterCancel.current = true;
     setState({ kind: 'idle' });
+  }
+
+  function showDemo() {
+    requests.cancel();
+    focusAfterCancel.current = false;
+    setFile(null);
+    if (inputRef.current) inputRef.current.value = '';
+    setState({ kind: 'confirm', extraction: demoNotice(), source: 'demo' });
   }
 
   function chooseFiles(files: FileList | null): boolean {
@@ -116,7 +126,7 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
       const raw: unknown = await response.json().catch(() => null);
       if (!requests.isCurrent(controller)) return;
       const parsed = Reply.safeParse(raw);
-      if (response.ok && parsed.success) setState({ kind: 'confirm', extraction: parsed.data.extraction });
+      if (response.ok && parsed.success) setState({ kind: 'confirm', extraction: parsed.data.extraction, source: 'upload' });
       else {
         const failure = z.object({ error: z.object({ code: z.string() }) }).safeParse(raw);
         setState({ kind: 'error', message: failureMessage(failure.success ? failure.data.error.code : null, response.headers.get('retry-after')), canRetry: true });
@@ -162,11 +172,13 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
       </button>
       <div className="flex flex-wrap gap-3">
         <Button variant="secondary" disabled={state.kind === 'loading' || !file} onClick={() => void read('file')}>Read notice</Button>
-        <Button variant="quiet" disabled={state.kind === 'loading'} onClick={() => void read('sample')}>Use sample notice</Button>
+        <Button variant="quiet" disabled={state.kind === 'loading' || (state.kind === 'confirm' && state.source === 'demo')} onClick={showDemo}>Try demo notice</Button>
+        <Button variant="quiet" disabled={state.kind === 'loading'} onClick={() => void read('sample')}>Read sample with AI</Button>
       </div>
+      <p className="text-sm text-gray-600">Try demo notice works without AI and uses fictional sample values. It does not read your selected file.</p>
       {state.kind === 'loading' && <div role="status" aria-live="polite"><p>Reading your notice… usually 10–20 s</p><Button variant="quiet" onClick={cancel}>Cancel</Button></div>}
       {state.kind === 'error' && <div role="alert" className="text-sm"><p>{state.message}</p>{state.canRetry && <Button variant="quiet" onClick={() => void read(lastRequest.current)}>Retry</Button>}</div>}
-      {state.kind === 'confirm' && <ExtractionConfirmCard extraction={state.extraction} onCancel={cancel} onConfirm={(notice) => { onConfirm(notice); cancel(); }} />}
+      {state.kind === 'confirm' && <ExtractionConfirmCard key={state.source} extraction={state.extraction} source={state.source} onCancel={cancel} onConfirm={(notice) => { onConfirm(notice, state.source); cancel(); }} />}
     </section>
   );
 }

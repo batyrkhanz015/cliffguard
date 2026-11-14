@@ -16,6 +16,7 @@ export const EligibilityNoticeExtractionSchema = z.object({
   warnings: z.array(z.string().max(160)).max(5),
 });
 export type EligibilityNoticeExtraction = z.infer<typeof EligibilityNoticeExtractionSchema>;
+export type NoticeSource = 'upload' | 'demo';
 
 /** Deterministic review notices; never infer filing status or plan coverage from size. */
 export function extractionWarnings(extraction: EligibilityNoticeExtraction): string[] {
