@@ -28,3 +28,6 @@ coverage/
 
 # hackathon brief screenshots (organizer material, kept local)
 /*.png
+
+# superpowers SDD scratch
+.superpowers/
