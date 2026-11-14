@@ -43,10 +43,17 @@ export async function explainPlan(d: Diagnosis, plan: PlanResult): Promise<PlanE
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), EXPLANATION_TIMEOUT_MS);
   const deadline = Date.now() + EXPLANATION_TIMEOUT_MS;
+  const timedOut = new Promise<false>((resolve) => {
+    controller.signal.addEventListener('abort', () => resolve(false), { once: true });
+  });
   let correction = '';
   try {
     for (let attempt = 0; attempt < 2; attempt++) {
-      if (controller.signal.aborted || !(await reserveClaudeCall()) || controller.signal.aborted) return fallback();
+      if (controller.signal.aborted || Date.now() >= deadline) return fallback();
+      // Store reservations cannot be cancelled. A late reservation still consumes its slot,
+      // but this request returns on time and never dispatches against that late result.
+      const reserved = await Promise.race([reserveClaudeCall(), timedOut]);
+      if (!reserved || controller.signal.aborted || Date.now() >= deadline) return fallback();
       const response = await createClaudeClient().beta.messages.parse({
         model: 'claude-opus-5-5', max_tokens: 900,
         betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
