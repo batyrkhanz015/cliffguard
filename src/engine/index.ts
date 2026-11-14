@@ -10,4 +10,4 @@ export { diagnose, type Diagnosis, type Zone } from './diagnose';
 export { computeAlerts, type CheckIn } from './alerts';
 export { upcomingDeadlines } from './deadlines';
 export { estimate2027, type Estimate2027 } from './estimate2027';
-export { templateExplanation } from './explainTemplate';
+export { FLAG_CAVEATS, templateExplanation } from './explainTemplate';

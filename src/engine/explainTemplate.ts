@@ -3,7 +3,7 @@ import { formatDate, movesBring, usd } from './format';
 import type { Explanation, FlagCode, LeverId, Move, PlanResult } from './types';
 
 /** Static copy for the flags that change how far to trust the numbers. */
-const FLAG_CAVEATS: Record<FlagCode, string> = {
+export const FLAG_CAVEATS: Record<FlagCode, string> = {
   NO_APTC: 'You get no advance credit, so there is nothing to repay; you may be due a credit at filing.',
   PARTIAL_YEAR: 'You had the credit for part of the year only, so the figures cover those months.',
   CAPITAL_LOSS_LIMITED: 'Capital losses count only up to the annual limit; carryovers from earlier years are not included.',
