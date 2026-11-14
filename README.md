@@ -17,7 +17,7 @@ CliffGuard is a web app for freelancers and other variable-income families on He
 3. Read the **result**: MAGI, the cliff, repayment owed, headroom.
 4. Open the **gig check**: Dani's $12,000 December project, with and without a plan.
 5. Open the **plan**: moves are previewed, exact amounts and how-tos are locked.
-6. Click **Unlock (demo)**: no payment, see "What is and is not live" below.
+6. Click **Unlock Year demo — free**: no card, no charge (see "What is and is not live" below).
 7. **Export** for a tax preparer, or open **check-in** to re-project with new income.
 
 ## The problem and the persona
