@@ -80,6 +80,13 @@ describe('explanation disclosure and cache', () => {
     expect(response.status).toBe(429); expect(response.headers.get('Retry-After')).toBe('42');
     expect(fetch).toHaveBeenCalledOnce();
   });
+  it('caps explanations per IP so a dropped cookie cannot reset the limit', async () => {
+    vi.mocked(limit).mockImplementation(async (name) => (name === 'explainIp' ? { ok: false, retryAfterSec: 99 } : { ok: true, retryAfterSec: 0 }));
+    const response = await POST(new Request('http://localhost:3000/api/explain', { method: 'POST', headers: { 'Content-Type': 'application/json', origin: 'http://localhost:3000', 'x-forwarded-for': '203.0.113.7' }, body: '{}' }));
+    expect(limit).toHaveBeenCalledWith('explainIp', '203.0.113.7', 30, 86400);
+    expect(response.status).toBe(429); expect(response.headers.get('Retry-After')).toBe('99');
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it.each(['access', 'gig', 'kill'] as const)('revalidates %s after an in-flight provider call', async (change) => {
     vi.stubGlobal('fetch', vi.fn(async () => {
       const record = await requireHousehold(identity.sid);

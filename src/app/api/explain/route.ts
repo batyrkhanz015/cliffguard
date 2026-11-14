@@ -9,7 +9,7 @@ import { requireSameOrigin } from '@/server/origin';
 import { isEntitled, requireHousehold } from '@/server/household';
 import { planExport } from '@/server/planAccess';
 import { limit } from '@/server/ratelimit';
-import { readJson, route } from '@/server/route';
+import { clientIp, readJson, route } from '@/server/route';
 import { getSid } from '@/server/session';
 import { store } from '@/server/store';
 
@@ -24,8 +24,17 @@ export const POST = route(async (request) => {
     return { ...planExport(household, asOf), scope: householdScope(household) };
   };
   const { before, plan, scope } = await readPlan();
-  const { ok, retryAfterSec } = await limit('explain', sid, 10, 3600);
-  if (!ok) throw new ApiError('RATE_LIMITED', 429, 'Too many explanation requests. Try again later.', { retryAfterSec });
+  // Demo unlock needs no payment, so the IP cap is what stops a dropped cookie draining the daily budget.
+  const limits = await Promise.all([
+    limit('explain', sid, 10, 3600),
+    limit('explainIp', clientIp(request, sid), 30, 86400),
+  ]);
+  const denied = limits.filter((result) => !result.ok);
+  if (denied.length) {
+    throw new ApiError('RATE_LIMITED', 429, 'Too many explanation requests. Try again later.', {
+      retryAfterSec: Math.max(...denied.map((result) => result.retryAfterSec)),
+    });
+  }
   const hash = explanationPlanHash(before, plan);
   const key = explanationCacheKey(sid);
   const revalidate = async () => {
