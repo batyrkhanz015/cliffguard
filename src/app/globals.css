@@ -1,24 +1,111 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens. Violet carries the brand; red is reserved for the cliff (the wall, the
+ * loss zone, errors); green means money kept.
+ */
+@theme {
+  --color-violet: #5b42dc;
+  --color-violet-deep: #4f31ba;
+  --color-violet-bright: #5553f5;
+  --color-violet-soft: #6c5ce7;
+  --color-violet-link: #7367ff;
+  --color-air: #f2f2f2;
+  --color-night: #0c0c0c;
+  --color-night-raised: #161616;
+  --color-hairline: #e2e2ed;
+  --color-cliff: #fb2c36;
+  --color-cliff-strong: #e40014;
+  --color-cliff-soft: #ffe2e2;
+  --color-kept: #00c758;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-inter-tight), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-pixel: var(--font-silkscreen), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    color-scheme: light;
+    background: var(--color-night);
+  }
+
+  body {
+    background: var(--color-air);
+    color: var(--color-gray-950);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-violet-link);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-violet);
+    color: #fff;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+/* Stacked uppercase display headlines. */
+@utility type-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+}
+
+/* Pixel-font eyebrow and section numbers, e.g. "01 / WHAT CHANGED". */
+@utility type-eyebrow {
+  font-family: var(--font-pixel);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Phones: the landing's primary button is fixed to the bottom, so keep the footer clear of it. */
+@media (width < 40rem) {
+  body:has([data-mobile-cta]) > footer {
+    padding-bottom: 5.5rem;
+  }
+}
+
+/* The hero's one motion: the December gig's arc jumps the wall. */
+.gig-arc-reveal {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: gig-arc-draw 1.1s cubic-bezier(0.45, 0, 0.2, 1) 0.5s forwards;
+}
+
+.gig-arc-landing {
+  opacity: 0;
+  animation: gig-arc-land 0.3s ease-out 1.55s forwards;
+}
+
+@keyframes gig-arc-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes gig-arc-land {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gig-arc-reveal,
+  .gig-arc-landing {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
 }
