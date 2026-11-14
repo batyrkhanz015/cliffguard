@@ -128,14 +128,18 @@ Below the line, changes are smooth. **Crossing the line is the dramatic case.** 
 4. **"Never cross the line" means turning down work.** That rule is itself the pain. Urban Institute's Jason Levitis, on a possible $10k repayment from one extra shift: *"maybe don't take that shift."* A KFF poll found **43% of enrollees plan to work more hours**.
 
 ### The real question CliffGuard answers: "Should I take this extra work?"
-Dani is at $122k projected and is offered a **$12,000 December project**, which would take her to $134k. Rough numbers: federal 22% bracket plus self-employment tax, no state tax, illustrative.
+Dani's counted income is projected at **$122,036**, and she's offered a **$12,000 December project**. Counted income goes up by less than the gig, because half of self-employment tax is deducted: it becomes **$133,188**. These are engine numbers using the real 2026 tables: a married couple filing jointly in the 12% bracket, plus self-employment tax, no state tax. Full detail is in `docs/spec.md` §0 and §4.
 
 | Choice | Outcome |
 |---|---|
-| **Turn it down** | Keeps ~$7,650 of help; gives up $12,000 of work |
-| **Take it, do nothing** | ~$7,850 left after tax, minus ~$7,650 of help lost. **Keeps about $200 for a month of work** |
-| **Take it, put ~$5,500 into a SEP-IRA** | Back under the line, keeps ~$7,000 of help. **~$2,900 more cash, plus $5,500 in her own retirement account** |
-| **Take it, invoice on January 2** | Keeps all 2026 help; the $12k counts toward 2027 |
+| **Turn it down** | Keeps her subsidy; gives up $12,000 of work |
+| **Take it, do nothing** | **Keeps only $1,321** of the $12,000 after tax and lost subsidy |
+| **Take it + rescue plan, "Keep my cash" on** | **Keeps $8,548**: bill $3,000 of the work in January, buy the planned laptop now, contribute to the HSA |
+| **Take it + rescue plan, SEP-IRA first** | **Keeps $9,083**, with $5,590 of it in her retirement account |
+
+**The most striking number:** an **$8,000** gig with no plan leaves Dani **$1,668 poorer than saying no**.
+
+> *Correction (19:45, Nov 14):* an earlier version of this table assumed the 22% bracket and showed "keeps about $200". The engine spec recalculated it with the 12% bracket and the half-SE-tax deduction.
 
 ---
 
@@ -145,7 +149,7 @@ Dani is at $122k projected and is offered a **$12,000 December project**, which 
 |---|---|---|---|---|
 | **Invoice in January instead of December** | The income isn't on the 2026 Schedule C; it moves to the 2027 return | Invoice date, bank deposit, client's 1099 | **Yes**, it arrives a few weeks later | Dec 31 |
 | **Buy work items you need before year-end** | Schedule C expense, which lowers profit | Receipts | Spent on things needed anyway | Dec 31 |
-| **HSA contribution** (needs an HSA-eligible plan; bronze counts from 2026) | Form 8889 → Schedule 1 deduction | HSA provider statement | **Mostly**: withdraw tax-free anytime for medical bills, including past ones | Apr 15, 2027 |
+| **HSA contribution** (needs an HSA-eligible plan; bronze counts from 2026) | Form 8889 → Schedule 1 deduction | HSA provider statement | **Mostly**: withdraw tax-free anytime for medical bills incurred after the HSA was opened | Apr 15, 2027 |
 | **Traditional IRA** | Schedule 1 deduction | Form 5498 | No, locked until retirement | Apr 15, 2027 |
 | **SEP-IRA** (self-employed) | Schedule 1 deduction | Form 5498 | No, locked until retirement | Tax filing deadline, including extensions |
 
@@ -162,7 +166,7 @@ Dani is at $122k projected and is offered a **$12,000 December project**, which 
 | When | What happens |
 |---|---|
 | **Nov 1 – Jan 15** (open enrollment) | Estimate next year's income on HealthCare.gov. The Marketplace checks it against IRS, Social Security and wage data. You can take **all, some or none** of the help in advance; taking less is the safe option if income is uncertain |
-| **During the year** | Report income changes "as soon as possible" so monthly help is adjusted. (We couldn't confirm a fixed "within 30 days" rule from official sources.) |
+| **During the year** | Enrollees must report changes "within 30 days of such change" ([45 CFR 155.330(b)](https://www.law.cornell.edu/cfr/text/45/155.330)). The new monthly help generally starts on the first day of the following month. Exchanges may set an income-change threshold below which reporting isn't required. |
 | **Dec 31** | Last day for invoice timing and business purchases to count for 2026 |
 | **Late January** | Form 1095-A arrives from the Marketplace: monthly premium, benchmark plan price, help paid |
 | **By Apr 15** | File the return **with Form 8962** (required if you got advance help). Excess help is added to the tax bill, **uncapped from 2026**. HSA and IRA contributions for 2026 are allowed until this date. Skipping Form 8962 can cost you future advance help |
@@ -181,7 +185,7 @@ Dani is at $122k projected and is offered a **$12,000 December project**, which 
 
 ### The magic moment (under 60 seconds, no login)
 1. The landing page says: **"Take the gig. Keep your health subsidy."** The user clicks "Try as Dani's family", or enters 5 numbers: ZIP, household size and ages, the income given to the Marketplace, monthly help received, and income so far plus expected.
-2. Within seconds: *"You're at $122k. Someone offers you $12k? Doing nothing, you'd keep ~$200. Here's how to keep ~$8,400 instead."* A **slider** shows income approaching the visible "cliff wall".
+2. Within seconds: *"You're $6,564 under the line. Someone offers you $12k? Doing nothing, you'd keep $1,321. With a rescue plan, you keep $8,548."* A **slider** shows income approaching the visible "cliff wall", where the repayment jumps from $1,697 to $9,342.
 3. A ranked rescue plan follows: exact amounts per move, the deadline for each, and a "Keep my cash" toggle.
 4. Optional: upload the Marketplace eligibility notice, invoices or a bank export, and **Claude extracts the numbers**.
 
@@ -199,7 +203,7 @@ Documents / inputs ──► Claude extracts ──► validated numbers (Zod)
                      by calling the engine as a tool; it drafts the checklist and
                      tax-preparer summary
 ```
-- **Rules engine (deterministic):** produces every number shown. Same input, same output. Tested against published worked examples (KFF, Instead).
+- **Rules engine (deterministic):** produces every number shown. Same input, same output. Tested against published worked examples (KFF, Morkel Financial) and the IRS's own 2026 draft Form 8962 example.
 - **Claude:** reads documents, explains results, and answers follow-ups by running the engine. It never invents a figure.
 - **No outside API needed for v1.** The benchmark plan price is worked out from the user's own monthly help and income estimate. CMS public plan files are a fallback.
 
