@@ -80,7 +80,7 @@ const EntitlementSchema = z.object({
 });
 
 const HouseholdSourceSchema = z.enum(['sample_dani', 'manual', 'upload']);
-type HouseholdSource = z.infer<typeof HouseholdSourceSchema>;
+export type HouseholdSource = z.infer<typeof HouseholdSourceSchema>;
 
 export const HouseholdRecordSchema = z.object({
   version: z.literal(1),

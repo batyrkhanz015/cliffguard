@@ -80,7 +80,7 @@ export default async function Home() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link href="/check" className={buttonClasses('glitter', 'dark')}>
                 Check my numbers
-                <span className="text-sm font-medium text-white/85">5 quick questions</span>
+                <span className="text-sm font-medium text-white">5 quick questions</span>
               </Link>
             </div>
           </div>
