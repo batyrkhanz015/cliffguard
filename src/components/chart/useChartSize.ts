@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 
-const FALLBACK_WIDTH = 640;
 const PHONE_MAX = 480;
 
-/** The drawn width of a chart's container, so the SVG is drawn 1:1 and 12px text stays 12px. */
+/**
+ * The drawn width of a chart's container, so the SVG is drawn 1:1 and 12px text stays 12px.
+ * `width` is 0 until measured: draw nothing then, so a wide first render never stretches the layout.
+ */
 export function useChartSize() {
   const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(FALLBACK_WIDTH);
+  const [width, setWidth] = useState(0);
 
   useEffect(() => {
     const element = ref.current;

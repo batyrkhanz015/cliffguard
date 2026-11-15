@@ -6,32 +6,50 @@ import { XAxis, YAxis } from '@/components/chart/Axes';
 import { ChartTooltip } from '@/components/chart/ChartTooltip';
 import { estimateTextWidth, placeLabel, type Rect } from '@/components/chart/labels';
 import { CHART, type Plot } from '@/components/chart/palette';
-import { compactUsd, linePath, linearScale, niceStep, niceTicks, signedUsd } from '@/components/chart/scale';
+import { compactUsd, linePath, linearScale, niceStep, niceTicks } from '@/components/chart/scale';
 import { useChartSize } from '@/components/chart/useChartSize';
 import { useCrosshair } from '@/components/chart/useCrosshair';
+import { netLabel, type OfferNets } from './offerNets';
 
 type Curve = GigCheckResult['curve'];
-type GigPlotProps = { curve: Curve; lossZone: GigCheckResult['lossZone']; marked: number; summary: string };
+type GigPlotProps = { curve: Curve; lossZone: GigCheckResult['lossZone']; marked: number; nets: OfferNets; summary: string };
 
 const MARGIN = { top: 40, right: 20, bottom: 52 } as const;
+const ZONE_TITLE = 'Loss zone';
 const ZONE_DETAIL = 'Taking it leaves you worse off';
 const PILL_HEIGHT = 22;
 const LABEL_HEIGHT = 16;
 
-/** The value of a series at `gig`, read between the two nearest curve points. */
-function valueAt(curve: Curve, gig: number, pick: (point: Curve[number]) => number): number {
-  const after = curve.findIndex((point) => point.gig >= gig);
-  if (after <= 0) return pick(curve[Math.max(after, 0)]);
-  const [a, b] = [curve[after - 1], curve[after]];
-  return pick(a) + ((gig - a.gig) / (b.gig - a.gig)) * (pick(b) - pick(a));
+type ZoneLabel = { x: number; y: number; width: number; detail: boolean };
+
+const swatchWidth = 14;
+
+/**
+ * Where the loss-zone label goes: at the zone's left edge if the offer line is not in the way,
+ * else right of the offer line, else just the title, so the text never crosses the offer line.
+ */
+function layoutZoneLabel(zoneLeft: number, offerX: number, plot: Plot): ZoneLabel {
+  const full = estimateTextWidth(ZONE_DETAIL) + swatchWidth;
+  const title = estimateTextWidth(ZONE_TITLE) + swatchWidth;
+  const y = plot.top + 6;
+  const clear = (x: number, width: number) => x + width <= plot.right && (offerX < x - 4 || offerX > x + width + 4);
+  const atZone = zoneLeft + 6;
+  const afterOffer = offerX + 8;
+  const options: ZoneLabel[] = [
+    { x: atZone, y, width: full, detail: true },
+    { x: afterOffer, y, width: full, detail: true },
+    { x: atZone, y, width: title, detail: false },
+    { x: afterOffer, y, width: title, detail: false },
+  ];
+  return options.find((option) => clear(option.x, option.width)) ?? options[2];
 }
 
 /** What you keep from a gig of any size, with and without a plan, with the loss zone and the offer marked. */
-export function GigPlot({ curve, lossZone, marked, summary }: GigPlotProps) {
+export function GigPlot({ curve, lossZone, marked, nets, summary }: GigPlotProps) {
   const { ref, width, height, compact } = useChartSize();
   const maxGig = curve[curve.length - 1].gig;
-  const nets = curve.flatMap((point) => [point.netDoNothing, point.netWithPlan, 0]);
-  const yTicks = niceTicks(Math.min(...nets), Math.max(...nets), compact ? 4 : 5);
+  const seriesValues = curve.flatMap((point) => [point.netDoNothing, point.netWithPlan, 0]);
+  const yTicks = niceTicks(Math.min(...seriesValues), Math.max(...seriesValues), compact ? 4 : 5);
   const yStep = yTicks.length > 1 ? yTicks[1] - yTicks[0] : 1;
   const xStep = niceStep(maxGig, compact ? 3 : 6);
   const xTicks = niceTicks(0, maxGig, compact ? 3 : 6);
@@ -56,18 +74,18 @@ export function GigPlot({ curve, lossZone, marked, summary }: GigPlotProps) {
   };
 
   const zone = lossZone === null ? null : { left: x(lossZone.from), right: x(lossZone.to) };
-  const zoneLabel: Rect | null =
-    zone === null ? null : { x: zone.left + 6, y: plot.top + 6, width: Math.min(estimateTextWidth(ZONE_DETAIL) + 14, plot.right - zone.left - 6), height: 34 };
-  const showZoneDetail = zoneLabel !== null && estimateTextWidth(ZONE_DETAIL) + 14 <= plot.right - (zoneLabel.x - 6) - 6;
+  const zoneLabel = zone === null ? null : layoutZoneLabel(zone.left, offerX, plot);
+  const zoneObstacle: Rect | null = zoneLabel === null ? null : { x: zoneLabel.x, y: zoneLabel.y, width: zoneLabel.width, height: zoneLabel.detail ? 34 : LABEL_HEIGHT };
 
   const offerDots = [
-    { id: 'plan', value: valueAt(curve, marked, (p) => p.netWithPlan), color: CHART.plan },
-    { id: 'nothing', value: valueAt(curve, marked, (p) => p.netDoNothing), color: CHART.doNothing },
+    { id: 'plan', value: nets.netWithPlan, color: CHART.plan },
+    { id: 'nothing', value: nets.netDoNothing, color: CHART.doNothing },
   ].map((dot) => ({ ...dot, cy: y(dot.value) }));
   const bounds: Rect = { x: plot.left, y: plot.top, width: plot.right - plot.left, height: plot.bottom - plot.top };
-  const obstacles: Rect[] = zoneLabel === null ? [] : [zoneLabel];
+  const offerLine: Rect = { x: offerX - 2, y: plot.top, width: 4, height: plot.bottom - plot.top };
+  const obstacles: Rect[] = zoneObstacle === null ? [offerLine] : [zoneObstacle, offerLine];
   const dotLabels = offerDots.map((dot) => {
-    const text = signedUsd(dot.value);
+    const text = netLabel(dot.value, nets.approximate);
     const placed = placeLabel([offerX, dot.cy], { width: estimateTextWidth(text), height: LABEL_HEIGHT }, {
       candidates: dot.id === 'plan' ? ['above-right', 'above-left', 'below-right', 'below-left'] : ['below-right', 'below-left', 'above-right', 'above-left'],
       bounds,
@@ -80,8 +98,9 @@ export function GigPlot({ curve, lossZone, marked, summary }: GigPlotProps) {
   });
 
   return (
-    <div ref={ref} className="relative">
-      <svg width={width} height={height} role="img" aria-label={summary} className="block font-sans">
+    <div ref={ref} className="relative min-h-60 w-full min-w-0">
+      {width > 0 && (
+        <svg width={width} height={height} role="img" aria-label={summary} className="block max-w-full font-sans">
         <YAxis ticks={yTicks} y={y} plot={plot} format={(tick) => compactUsd(tick, yStep)} />
         <XAxis ticks={xTicks} x={x} plot={plot} format={(tick) => compactUsd(tick, xStep)} title="Size of the gig" />
 
@@ -90,9 +109,9 @@ export function GigPlot({ curve, lossZone, marked, summary }: GigPlotProps) {
             <rect x={zone.left} y={plot.top} width={Math.max(zone.right - zone.left, 2)} height={plot.bottom - plot.top} fill={CHART.cliff} opacity={0.08} />
             <rect x={zoneLabel.x} y={zoneLabel.y + 4} width={8} height={8} fill={CHART.cliff} />
             <text x={zoneLabel.x + 14} y={zoneLabel.y + 8} dominantBaseline="middle" fill={CHART.ink} fontSize={12} fontWeight={500} stroke={CHART.surface} strokeWidth={3} paintOrder="stroke">
-              Loss zone
+              {ZONE_TITLE}
             </text>
-            {showZoneDetail && (
+            {zoneLabel.detail && (
               <text x={zoneLabel.x + 14} y={zoneLabel.y + 26} dominantBaseline="middle" fill={CHART.ink} fontSize={12} stroke={CHART.surface} strokeWidth={3} paintOrder="stroke">
                 {ZONE_DETAIL}
               </text>
@@ -107,7 +126,7 @@ export function GigPlot({ curve, lossZone, marked, summary }: GigPlotProps) {
 
         <line x1={offerX} x2={offerX} y1={pill.y + PILL_HEIGHT} y2={plot.bottom} stroke={CHART.scenario} />
         <rect x={pill.x} y={pill.y} width={pill.width} height={pill.height} rx={11} fill={CHART.scenario} />
-        <text x={pill.x + pill.width / 2} y={pill.y + PILL_HEIGHT / 2} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={12} fontWeight={500}>
+        <text x={pill.x + pill.width / 2} y={pill.y + PILL_HEIGHT / 2} textAnchor="middle" dominantBaseline="middle" fill={CHART.surface} fontSize={12} fontWeight={500}>
           {pillText}
         </text>
         {offerDots.map((dot, i) => (
@@ -133,6 +152,7 @@ export function GigPlot({ curve, lossZone, marked, summary }: GigPlotProps) {
 
         <rect x={plot.left} y={plot.top} width={plot.right - plot.left} height={plot.bottom - plot.top} fill="transparent" {...crosshair.handlers} />
       </svg>
+        )}
       {hovered !== null && (
         <ChartTooltip
           x={x(hovered.gig)}
@@ -140,8 +160,8 @@ export function GigPlot({ curve, lossZone, marked, summary }: GigPlotProps) {
           chartWidth={width}
           title={`Gig of ${usd(hovered.gig)}`}
           rows={[
-            { label: 'With a plan', value: signedUsd(hovered.netWithPlan), color: CHART.plan },
-            { label: 'Doing nothing', value: signedUsd(hovered.netDoNothing), color: CHART.doNothing },
+            { label: 'With a plan', value: netLabel(hovered.netWithPlan, false), color: CHART.plan },
+            { label: 'Doing nothing', value: netLabel(hovered.netDoNothing, false), color: CHART.doNothing },
           ]}
         />
       )}

@@ -40,9 +40,3 @@ export function compactUsd(value: number, step: number): string {
   if (abs < 1000) return `${sign}$${abs}`;
   return `${sign}$${(abs / 1000).toFixed(step % 1000 === 0 ? 0 : 1)}K`;
 }
-
-/** Whole dollars with a true minus sign: 1321 gives "$1,321", -400 gives "−$400". */
-export function signedUsd(value: number): string {
-  const rounded = Math.round(value);
-  return `${rounded < 0 ? '−' : ''}$${Math.abs(rounded).toLocaleString('en-US')}`;
-}

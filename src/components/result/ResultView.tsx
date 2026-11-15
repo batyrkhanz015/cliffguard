@@ -6,12 +6,15 @@ import { useMemo, useState } from 'react';
 import { GigChart } from '@/components/gig/GigChart';
 import { GigInput } from '@/components/gig/GigInput';
 import { GigOptionsTable } from '@/components/gig/GigOptionsTable';
+import type { ExactNets } from '@/components/gig/offerNets';
+import type { GigOptionId } from '@/engine';
 import { SampleBanner } from '@/components/shared/SampleBanner';
 import { buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { usd } from '@/engine/format';
 import { withExtraIncome } from '@/lib/extraIncome';
 import { useGigCheck } from '@/lib/useGigCheck';
+import type { GigCheckView } from '@/lib/planView';
 import type { LoadedHousehold } from '@/lib/useHousehold';
 import { CliffChart, type ChartMark } from './CliffChart';
 import { DaysLeftChip } from './DaysLeftChip';
@@ -20,6 +23,13 @@ import { FlagsAccordion } from './FlagsAccordion';
 import { Headline } from './Headline';
 import { HowWeGotThis } from './HowWeGotThis';
 import { ReportChangeCard } from './ReportChangeCard';
+
+/** The engine's own nets for the checked offer, for the chart's labels. */
+function exactNets(result: GigCheckView): ExactNets | undefined {
+  const net = (id: GigOptionId) => result.options.find((option) => option.id === id)?.netFromGig;
+  const [netWithPlan, netDoNothing] = [net('take_with_plan'), net('take_do_nothing')];
+  return netWithPlan === undefined || netDoNothing === undefined ? undefined : { netWithPlan, netDoNothing };
+}
 
 /** The result screen (S2) with the gig check (S3) on it. */
 export function ResultView({ household }: { household: LoadedHousehold }) {
@@ -33,10 +43,10 @@ export function ResultView({ household }: { household: LoadedHousehold }) {
   const marks = useMemo<ChartMark[]>(() => {
     const list: ChartMark[] = [{ id: 'now', label: 'Today', magi: diagnosis.income.magi, repayment: diagnosis.repayment, tone: 'now' }];
     if (extra > 0) {
-      list.push({ id: 'extra', label: `With +${usd(extra)}`, magi: scenario.income.magi, repayment: scenario.repayment, tone: 'scenario' });
+      list.push({ id: 'extra', label: `With +${usd(extra)}`, shortLabel: `+${usd(extra)}`, magi: scenario.income.magi, repayment: scenario.repayment, tone: 'scenario' });
     }
     if (gig.result !== null && withOffer !== undefined && withOffer !== null) {
-      list.push({ id: 'offer', label: 'With the offer', magi: gig.result.magiWith, repayment: withOffer.repayment, tone: 'scenario' });
+      list.push({ id: 'offer', label: 'With the offer', shortLabel: 'Offer', magi: gig.result.magiWith, repayment: withOffer.repayment, tone: 'scenario' });
     }
     return list;
   }, [diagnosis, extra, scenario, gig.result, withOffer]);
@@ -79,6 +89,7 @@ export function ResultView({ household }: { household: LoadedHousehold }) {
               curve={gig.result.curve}
               lossZone={gig.result.lossZone}
               gigAmount={gig.offer.amount}
+              exact={gig.result.gigAmount === gig.offer.amount ? exactNets(gig.result) : undefined}
               onGigChange={(amount) => gig.check({ amount, canBillInJanuary: gig.offer?.canBillInJanuary ?? false })}
             />
           )}
