@@ -7,6 +7,8 @@ CliffGuard is a web app for freelancers and other variable-income families on He
 - **Live app:** https://cliffguard-beta.vercel.app
 - **Repo:** https://github.com/batyrkhanz015/cliffguard
 - **Education, not tax advice.**
+- **Stack:** Next.js 16 (App Router), TypeScript strict, Tailwind 4, Zod, Upstash Redis, deployed on Vercel. AI: OpenAI GPT-6.1, server-side only, with Anthropic as an alternative provider.
+- **Quality:** 584 automated tests (the engine reproduces published IRS, KFF and Morkel examples). Lint and strict typecheck are clean. The jury path was QA'd on production at desktop width and 375 px (`docs/qa.md`).
 
 ![Landing page](docs/screenshots/landing.png)
 
@@ -18,7 +20,8 @@ CliffGuard is a web app for freelancers and other variable-income families on He
 4. Open the **gig check**: Dani's $12,000 December project, with and without a plan.
 5. Open the **plan**: moves are previewed, exact amounts and how-tos are locked.
 6. Click **Unlock Year demo — free**: no card, no charge (see "What is and is not live" below).
-7. **Export** for a tax preparer, or open **check-in** to re-project with new income.
+7. Click **Explain my plan** for a plain-English AI explanation. Every number in it is checked against the engine.
+8. **Export** for a tax preparer, or open **check-in** to re-project with new income.
 
 ## The problem and the persona
 
@@ -60,18 +63,32 @@ These are test fixtures from `docs/spec.md` section B; the unit tests assert the
 
 People return because income lands monthly and the year has hard deadlines: Dec 31 moves, a monthly check-in that re-projects from real entries, Jan 15 (2027 estimate), Apr 15. See `docs/spec.md` sections 6-7.
 
+## Why it makes money
+
+- **Honest wedge:** about 2.0–2.9M variable-income Marketplace households. At $79 that is a ceiling of roughly $12–17M ARR from the ACA cliff alone.
+- **Path to ~$100M ARR (2030 hypothesis):** the same income-cliff engine covers other cliffs that bite at $60–160k household income, such as ACA cost-sharing tiers, income-driven student loans, IRA phase-outs and childcare credits. The second leg is B2B2C seats for CPAs, brokers and freelance platforms.
+- **Unit economics (assumptions, not yet measured):**
+  - blended CAC about $35, from SEO on engine-generated pages, freelancer creators and CPA partners;
+  - first-year ARPU about $72;
+  - gross margin about 90%;
+  - LTV about $137, so LTV/CAC is about 3.9×;
+  - payback on day one, because billing is annual and upfront.
+- Details and sources: `pitch/deck.md` and `research/`.
+
 ![Result](docs/screenshots/result.png)
 ![Gig check](docs/screenshots/gig.png)
 ![Plan, locked](docs/screenshots/plan-locked.png)
 ![Plan, unlocked](docs/screenshots/plan-unlocked.png)
 ![Check-in](docs/screenshots/checkin.png)
 
+<img src="docs/screenshots/result-mobile.png" width="280" alt="Result screen at phone width"> <img src="docs/screenshots/gig-mobile.png" width="280" alt="Gig check at phone width">
+
 ## What is and is not live
 
 - **Live:** the rules engine, gig check, optimizer, plan, notice upload and extraction, "Explain my plan", check-ins with history and alerts, `.ics` calendar, tax-preparer export, anonymous sessions, rate limits.
 - **Demo unlock instead of Stripe:** real Stripe checkout is deferred. The unlock buttons show the prices but collect no card and charge nothing. They only work when `DEMO_UNLOCK_ENABLED=true`, and enabling it gives every visitor with a saved household access.
 - **Cut:** free-form Q&A ("ask a what-if").
-- **AI needs a key:** live notice reading and explanations support OpenAI (`OPENAI_API_KEY`) or Anthropic (`ANTHROPIC_API_KEY`). Without the selected provider's key the app uses clearly labelled fallbacks (below).
+- **AI is live in production** on OpenAI GPT-6.1, for notice reading and "Explain my plan". Anthropic is supported as an alternative. Without a provider key, as in a local run with no env, the app falls back to manual entry and a labelled, calculation-based explanation.
 
 ## Architecture
 
@@ -98,6 +115,23 @@ People return because income lands monthly and the year has hard deadlines: Dec 
 
 Layout: `src/engine` (rules in `src/engine/rules`), `src/server`, `src/app/api`, `src/components`, `src/lib`, `src/samples`.
 
+## Privacy, safety and abuse controls
+
+- **No accounts.** Each visitor gets an anonymous random session id in an httpOnly, SameSite=Lax cookie, set `secure` in production. **Delete my data** erases the household, its check-ins and any cached explanation.
+- **Uploaded notices are read in memory and never stored.** Only values the user reviews and confirms enter the form.
+- **Paid plan details are redacted on the server for unpaid sessions,** so the browser never receives exact amounts or how-tos before unlock.
+- **Abuse limits:**
+  - per-session and per-IP rate limits on writes and AI routes;
+  - a shared daily AI call cap;
+  - a 4 MB upload cap with file-type checks;
+  - an origin check on the unlock and check-in routes;
+  - store outages return a clean 503 instead of crashing.
+- **AI guardrails:**
+  - documents are treated as untrusted data (prompt-injection aware);
+  - outputs are structured and validated with Zod;
+  - extraction keeps a field only with a verbatim quote from the document;
+  - a grounding validator rejects any explanation number that doesn't match the engine, and the app then shows the calculation-based template instead.
+
 ## Fixture provenance
 
 The engine is tested against published or primary-source cases (`docs/spec.md` section B, `src/engine/__tests__`):
@@ -117,7 +151,7 @@ Use Node.js 22 or later (required by AI SDK 7).
 ```sh
 npm i
 npm run dev        # http://localhost:3000
-npm test
+npm test           # 584 tests
 npm run lint && npm run typecheck
 ```
 
@@ -139,7 +173,11 @@ The project was built with Claude Code. `CLAUDE.md` holds the engineering standa
 
 - A Claude Code **orchestrator** planned, dispatched and integrated. It dispatched subagents: `researcher`, `strategist`, `judge`, `builder`, `code-reviewer`, `qa-tester` and `pitch-writer`.
 - Work ran as a subagent-driven loop: **builder, then code-reviewer, then fix rounds**, with the judge scoring at gates (`docs/scores.md`) and the strategist's spec in `docs/spec.md`, the plan in `docs/plan.md`.
-- **Another coding agent (Codex) built Tasks 8-11** (demo unlock, notice extraction, explanation, check-ins) from the same plan. The orchestrator reviewed and integrated that work (`docs/team/codex-handoff.md`).
+- **Another coding agent (Codex) built Tasks 8-11** from the same plan: demo unlock, notice extraction, explanation and check-ins. It also built the OpenAI provider, the plan-comparison UI and the simplified notice upload. The orchestrator reviewed and integrated each branch (`docs/team/codex-handoff.md`, `docs/team/openai-integration.md`).
+- **Before release:**
+  - a whole-branch review on the most capable model, with one fix wave;
+  - QA on the production URL at desktop and phone width (`docs/qa.md`);
+  - judge scores at every gate (`docs/scores.md`).
 - Research is in `research/`, handoffs in `docs/team/`.
 
 ## Docs
