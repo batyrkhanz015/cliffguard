@@ -75,7 +75,7 @@ function planParagraph(plan: PlanResult | null): string | null {
 
 /**
  * A plain-English reading of the diagnosis and the rescue plan from static templates. Deterministic;
- * every number comes from the arguments. The fallback when Claude's explanation is unavailable.
+ * every number comes from the arguments. The fallback when the AI explanation is unavailable.
  */
 export function templateExplanation(d: Diagnosis, plan: PlanResult | null): Explanation {
   const paragraphs = [situation(d), slope(d), planParagraph(plan)].filter((p): p is string => p !== null);

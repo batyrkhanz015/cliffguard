@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { householdScope } from '@/lib/householdScope';
-import { claudeAvailable } from '@/server/claude/client';
-import { calculationExplanation, explainPlan, explanationPlanHash, validateExplanation } from '@/server/claude/explain';
+import { aiAvailable, aiSource } from '@/server/ai/client';
+import { calculationExplanation, explainPlan, explanationPlanHash, validateExplanation } from '@/server/ai/explain';
 import { todayAsOf } from '@/server/clock';
 import { ApiError } from '@/server/errors';
 import { explanationCacheKey, ExplanationCacheSchema } from '@/server/explanationCache';
@@ -47,13 +47,13 @@ export const POST = route(async (request) => {
   };
   let result = calculationExplanation(before, plan);
   let shouldCache = false;
-  if (await claudeAvailable()) {
+  if (await aiAvailable()) {
     const envelope = ExplanationCacheSchema.safeParse(await store.get(key));
     const cached = envelope.success && envelope.data.hash === hash ? validateExplanation(envelope.data.explanation, before, plan) : null;
-    result = cached ? { ...cached, source: 'claude' } : await explainPlan(before, plan);
+    result = cached ? { ...cached, source: aiSource() } : await explainPlan(before, plan);
     // Configuration and budget also govern cached disclosures, not just new dispatches.
-    if (result.source === 'claude' && !(await claudeAvailable())) result = calculationExplanation(before, plan);
-    else shouldCache = result.source === 'claude' && !cached;
+    if (result.source !== 'template' && !(await aiAvailable())) result = calculationExplanation(before, plan);
+    else shouldCache = result.source !== 'template' && !cached;
   }
   // Check before persisting any provider result, then check again after awaited storage.
   // Deletion during a cache write can finish first; remove that late write before returning.

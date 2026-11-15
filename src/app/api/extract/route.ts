@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import { MAX_UPLOAD_MB } from '@/lib/uploadLimit';
-import { extractNotice } from '@/server/claude/extract';
+import { extractNotice } from '@/server/ai/extract';
 import { ApiError } from '@/server/errors';
 import { requireSameOrigin } from '@/server/origin';
 import { limit } from '@/server/ratelimit';
@@ -66,6 +66,6 @@ export const POST = route(async (request) => {
   } catch (error) {
     if (error instanceof ApiError) throw error;
     // Multipart, filesystem and transport exceptions can contain untrusted data.
-    throw new ApiError('CLAUDE_UNAVAILABLE', 503, MANUAL_FALLBACK);
+    throw new ApiError('AI_UNAVAILABLE', 503, MANUAL_FALLBACK);
   }
 });

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { extractNotice } from '../claude/extract';
-import { claudeAvailable, createClaudeClient, dailyCallKey } from '../claude/client';
+import { extractNotice } from '../ai/extract';
+import { aiAvailable, createClaudeClient, dailyCallKey } from '../ai/client';
 import { store } from '../store';
 import { NOTICE } from '@/test/noticeFixture';
 
@@ -53,7 +53,7 @@ describe('real Anthropic SDK request safety', () => {
   });
   it.each(['refusal', 'max_tokens', 'tool_use'])('fails closed on %s', async (reason) => {
     vi.stubGlobal('fetch', vi.fn(async () => reply(NOTICE, reason)));
-    expect(await extractNotice(FILE)).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
+    expect(await extractNotice(FILE)).toEqual({ error: 'AI_UNAVAILABLE' });
   });
   it.each(['bad-json', 'schema', 'server-error', 'network'])('sanitizes %s failures without retries or document logs', async (kind) => {
     const logs = [vi.spyOn(console, 'error'), vi.spyOn(console, 'debug'), vi.spyOn(console, 'warn')];
@@ -64,19 +64,19 @@ describe('real Anthropic SDK request safety', () => {
       return Response.json({ id: 'msg_test', type: 'message', role: 'assistant', content: [{ type: 'text', text: '{secret document contents' }], stop_reason: 'end_turn' });
     });
     vi.stubGlobal('fetch', transport);
-    expect(await extractNotice(FILE)).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
+    expect(await extractNotice(FILE)).toEqual({ error: 'AI_UNAVAILABLE' });
     expect(transport).toHaveBeenCalledOnce();
     for (const log of logs) expect(log).not.toHaveBeenCalled();
   });
   it('makes no call for missing key, kill switch, or invalid/zero cap', async () => {
     const transport = vi.fn(); vi.stubGlobal('fetch', transport);
     vi.stubEnv('ANTHROPIC_API_KEY', '');
-    expect(await claudeAvailable()).toBe(false);
-    expect(await extractNotice(FILE)).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
+    expect(await aiAvailable()).toBe(false);
+    expect(await extractNotice(FILE)).toEqual({ error: 'AI_UNAVAILABLE' });
     vi.stubEnv('ANTHROPIC_API_KEY', 'test'); vi.stubEnv('CLAUDE_ENABLED', 'false');
-    expect(await extractNotice(FILE)).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
+    expect(await extractNotice(FILE)).toEqual({ error: 'AI_UNAVAILABLE' });
     vi.stubEnv('CLAUDE_ENABLED', 'true'); vi.stubEnv('CLAUDE_DAILY_CALL_CAP', 'invalid');
-    expect(await extractNotice(FILE)).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
+    expect(await extractNotice(FILE)).toEqual({ error: 'AI_UNAVAILABLE' });
     expect(transport).not.toHaveBeenCalled();
     expect(await store.get(dailyCallKey())).toBeNull();
   });
@@ -86,9 +86,9 @@ describe('real Anthropic SDK request safety', () => {
     const results = await Promise.all(Array.from({ length: 8 }, () => extractNotice(FILE)));
     expect(results.filter((result) => 'extraction' in result)).toHaveLength(2);
     expect(transport).toHaveBeenCalledTimes(2);
-    expect(await claudeAvailable()).toBe(false);
+    expect(await aiAvailable()).toBe(false);
     vi.spyOn(store, 'incr').mockRejectedValue(new Error('store unavailable'));
-    expect(await extractNotice(FILE)).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
+    expect(await extractNotice(FILE)).toEqual({ error: 'AI_UNAVAILABLE' });
     expect(transport).toHaveBeenCalledTimes(2);
   });
   it('honors caller cancellation, including before dispatch', async () => {
@@ -102,8 +102,8 @@ describe('real Anthropic SDK request safety', () => {
     vi.stubGlobal('fetch', transport);
     const pending = extractNotice(FILE, controller.signal);
     await ready; controller.abort();
-    expect(await pending).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
-    expect(await extractNotice(FILE, controller.signal)).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
+    expect(await pending).toEqual({ error: 'AI_UNAVAILABLE' });
+    expect(await extractNotice(FILE, controller.signal)).toEqual({ error: 'AI_UNAVAILABLE' });
     expect(transport).toHaveBeenCalledOnce();
   });
   it('aborts the SDK transport after 25 seconds', async () => {
@@ -115,6 +115,6 @@ describe('real Anthropic SDK request safety', () => {
     })));
     const pending = extractNotice(FILE); await ready;
     await vi.advanceTimersByTimeAsync(25000);
-    expect(await pending).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
+    expect(await pending).toEqual({ error: 'AI_UNAVAILABLE' });
   });
 });

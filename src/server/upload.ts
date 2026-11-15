@@ -16,7 +16,7 @@ export function checkUpload(file: { size: number; type: string }): UploadCheck {
   return { ok: true };
 }
 
-/** Basic byte signatures reject mislabeled HTML/other types before they reach Claude. */
+/** Basic byte signatures reject mislabeled HTML/other types before they reach an AI provider. */
 export function matchesUploadType(bytes: Uint8Array, type: string): boolean {
   const starts = (...signature: number[]) => signature.every((value, index) => bytes[index] === value);
   if (type === 'application/pdf') return starts(0x25, 0x50, 0x44, 0x46, 0x2d);
@@ -36,7 +36,7 @@ export async function readBoundedBody(request: Request, maximum: number): Promis
   let size = 0;
   try {
     while (true) {
-      if (request.signal.aborted) throw new ApiError('CLAUDE_UNAVAILABLE', 503, 'Reading cancelled. Enter the numbers below.');
+      if (request.signal.aborted) throw new ApiError('AI_UNAVAILABLE', 503, 'Reading cancelled. Enter the numbers below.');
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;

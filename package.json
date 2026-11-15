@@ -11,9 +11,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.118",
     "@anthropic-ai/sdk": "^1.8.0",
     "@upstash/ratelimit": "^2.2.1",
     "@upstash/redis": "^1.41.0",
+    "ai": "^7.0.173",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",

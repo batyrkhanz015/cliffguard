@@ -16,7 +16,7 @@ function failureMessage(code: unknown, retry: string | null): string {
   if (code === 'NOT_RECOGNIZED') return "This doesn't look like a Marketplace eligibility notice. Enter the numbers below.";
   if (code === 'FILE_TOO_LARGE') return `Choose one file of ${MAX_UPLOAD_MB} MB or less. You can also enter the numbers below.`;
   if (code === 'UNSUPPORTED_FILE_TYPE') return 'Choose a PDF, PNG, JPEG or WebP notice. You can also enter the numbers below.';
-  if (code === 'CLAUDE_UNAVAILABLE') return 'Notice reading is unavailable. Try the demo notice or enter the numbers below.';
+  if (code === 'AI_UNAVAILABLE') return 'Notice reading is unavailable. Try the demo notice or enter the numbers below.';
   if (code === 'RATE_LIMITED') {
     const seconds = Number(retry);
     return Number.isFinite(seconds) && seconds > 0 ? `Upload limit reached. Try in ${Math.ceil(seconds / 60)} min, or enter the numbers below.` : 'Upload limit reached. Try later or enter the numbers below.';
@@ -142,7 +142,7 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
   return (
     <section aria-label="Read an eligibility notice" className="space-y-4 rounded-md border border-hairline p-4">
       <p className="font-semibold">Upload your eligibility notice</p>
-      <p className="text-sm text-gray-600">Optional. PDF, PNG, JPEG or WebP, up to {MAX_UPLOAD_MB} MB. Your notice is sent to Claude to read; CliffGuard does not store the file. Only confirmed values are used in your form; numbers are saved after you finish the check. You can always enter them manually.</p>
+      <p className="text-sm text-gray-600">Optional. PDF, PNG, JPEG or WebP, up to {MAX_UPLOAD_MB} MB. Your notice is sent to an external AI service to read; CliffGuard does not store the file. Only confirmed values are used in your form; numbers are saved after you finish the check. You can always enter them manually.</p>
       <input ref={inputRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp" hidden disabled={state.kind === 'loading'}
         aria-label="Eligibility notice file"
         onChange={(event) => { chooseFiles(event.target.files); }} />

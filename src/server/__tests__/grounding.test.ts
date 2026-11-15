@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allowedNumbers, ungroundedNumbers } from '../claude/grounding';
+import { allowedNumbers, ungroundedNumbers } from '../ai/grounding';
 
 describe('number grounding', () => {
   const allowed = allowedNumbers({ dollars: 122036, rate: 0.0996, deadline: '2027-04-15', rounded: 1697 });
