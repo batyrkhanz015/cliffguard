@@ -70,13 +70,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Phones: the landing's primary button is fixed to the bottom, so keep the footer clear of it. */
-@media (width < 40rem) {
-  body:has([data-mobile-cta]) > footer {
-    padding-bottom: 5.5rem;
-  }
-}
-
 /* The hero's one motion: the December gig's arc jumps the wall. */
 .gig-arc-reveal {
   stroke-dasharray: 1;
@@ -98,6 +91,80 @@
 @keyframes gig-arc-land {
   to {
     opacity: 1;
+  }
+}
+
+/* Glitter CTA: a slow diagonal sheen plus a few twinkling pixel squares, over the solid violet fill. */
+.btn-glitter {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glitter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.18) 47%,
+    rgb(255 255 255 / 0.3) 50%,
+    rgb(255 255 255 / 0.18) 53%,
+    transparent 65%
+  );
+  background-size: 250% 100%;
+  background-position: 150% 0;
+  animation: glitter-sheen 4.5s ease-in-out infinite;
+}
+
+.btn-glitter::after {
+  content: '';
+  position: absolute;
+  top: 18%;
+  left: 12%;
+  z-index: -1;
+  width: 4px;
+  height: 4px;
+  background: rgb(255 255 255 / 0.85);
+  box-shadow:
+    5rem 20px 0 rgb(255 255 255 / 0.7),
+    11rem -4px 0 rgb(255 255 255 / 0.8),
+    17rem 22px 0 rgb(255 255 255 / 0.6),
+    4rem 28px 0 rgb(255 255 255 / 0.7);
+  animation: glitter-twinkle 3s steps(2, jump-none) infinite;
+}
+
+@keyframes glitter-sheen {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+@keyframes glitter-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-glitter::before {
+    animation: none;
+    background-position: 60% 0;
+    opacity: 0.6;
+  }
+
+  .btn-glitter::after {
+    animation: none;
+    opacity: 0.5;
   }
 }
 

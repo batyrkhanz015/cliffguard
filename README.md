@@ -13,7 +13,7 @@ CliffGuard is a web app for freelancers and other variable-income families on He
 ## Try it in 60 seconds
 
 1. Open the app (no sign-up, no login).
-2. Click **Try Dani's family**.
+2. Click **Check my numbers**, then **Try Dani's family** (one-click sample) at the top of the form.
 3. Read the **result**: MAGI, the cliff, repayment owed, headroom.
 4. Open the **gig check**: Dani's $12,000 December project, with and without a plan.
 5. Open the **plan**: moves are previewed, exact amounts and how-tos are locked.

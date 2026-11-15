@@ -10,7 +10,7 @@ type SampleState = 'idle' | 'loading' | 'failed';
 
 /**
  * Stores Dani's sample inputs in the session (the server computes everything), then opens
- * the result. Fixed to the bottom of the screen on phones.
+ * the result.
  */
 export function TryDaniButton() {
   const router = useRouter();
@@ -28,20 +28,14 @@ export function TryDaniButton() {
 
   return (
     <>
-      <div
-        data-mobile-cta
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-violet/50 bg-night px-4 py-3 sm:static sm:border-0 sm:bg-transparent sm:p-0"
+      <Button
+        onClick={trySample}
+        loading={state === 'loading'}
+        loadingLabel="Computing Dani's year…"
+        className="w-full whitespace-nowrap sm:w-auto"
       >
-        <Button
-          surface="dark"
-          onClick={trySample}
-          loading={state === 'loading'}
-          loadingLabel="Computing Dani's year…"
-          className="w-full sm:w-auto"
-        >
-          Try Dani&apos;s family
-        </Button>
-      </div>
+        Try Dani&apos;s family
+      </Button>
       {state === 'failed' && (
         <Toast
           message="Couldn't load the sample, try again"

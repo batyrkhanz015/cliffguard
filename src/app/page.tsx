@@ -6,7 +6,6 @@ import { checkinSchedule } from '@/server/checkin';
 import { CliffIllustration } from '@/components/landing/CliffIllustration';
 import { PixelSquares } from '@/components/landing/PixelSquares';
 import { RuleChanges } from '@/components/landing/RuleChanges';
-import { TryDaniButton } from '@/components/landing/TryDaniButton';
 import { buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
@@ -79,12 +78,9 @@ export default async function Home() {
               where you stand. Then take the work anyway.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <TryDaniButton />
-              <Link href="/check" className={buttonClasses('secondary', 'dark')}>
-                Check my numbers (5 questions)
-              </Link>
-              <Link href="/check?step=2" className={buttonClasses('quiet', 'dark')}>
-                Upload my notice
+              <Link href="/check" className={buttonClasses('glitter', 'dark')}>
+                Check my numbers
+                <span className="text-sm font-medium text-white/85">5 quick questions</span>
               </Link>
             </div>
           </div>
