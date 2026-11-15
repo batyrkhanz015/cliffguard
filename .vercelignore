@@ -1,0 +1,10 @@
+# Never upload local secrets or scratch state to Vercel.
+.env*
+!.env.example
+.vercel
+.next
+node_modules
+.claude
+.superpowers
+/*.png
+AGENTS.md
