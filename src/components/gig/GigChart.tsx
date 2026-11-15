@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GigCheckResult } from '@/engine';
 import { useDeferredCommit } from '@/lib/useDeferredCommit';
 import { usd } from '@/engine/format';
-import { linePath, linearScale } from '@/components/chart/scale';
+import { CHART } from '@/components/chart/palette';
+import { signedUsd } from '@/components/chart/scale';
 import { formatMoney } from '@/lib/money';
+import { GigPlot } from './GigPlot';
 import { RoughEstimateNote } from './RoughEstimateNote';
 
 type GigChartProps = {
@@ -16,9 +18,6 @@ type GigChartProps = {
   onGigChange: (amount: number) => void;
 };
 
-const WIDTH = 360;
-const HEIGHT = 230;
-const PLOT = { left: 10, right: 350, top: 16, bottom: 196 } as const;
 const SLIDER_STEP = 500;
 /** Quiet time after the last slider move before the offer is re-checked, if the user never releases. */
 const COMMIT_DELAY_MS = 400;
@@ -29,88 +28,57 @@ const COMMIT_DELAY_MS = 400;
  */
 export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartProps) {
   const [draft, setDraft] = useState<number | null>(null);
+  const onGigChangeRef = useRef(onGigChange);
+  useEffect(() => {
+    onGigChangeRef.current = onGigChange;
+  });
   const commit = useCallback(
     (amount: number) => {
       setDraft(null);
-      if (amount > 0 && amount !== gigAmount) onGigChange(amount);
+      if (amount > 0 && amount !== gigAmount) onGigChangeRef.current(amount);
     },
-    [gigAmount, onGigChange],
+    [gigAmount],
   );
   const deferred = useDeferredCommit(commit, COMMIT_DELAY_MS);
 
   const shownAmount = draft ?? gigAmount;
   const maxGig = curve[curve.length - 1].gig;
-  const nets = curve.flatMap((point) => [point.netDoNothing, point.netWithPlan, 0]);
-  const x = linearScale([0, maxGig], [PLOT.left, PLOT.right]);
-  const y = linearScale([Math.min(...nets), Math.max(...nets)], [PLOT.bottom, PLOT.top]);
-  const zeroY = y(0);
   const marked = Math.min(shownAmount, maxGig);
   const summary = lossZone
     ? `Net from a gig by size. Gigs between ${usd(lossZone.from)} and ${usd(lossZone.to)} leave you poorer than saying no.`
     : 'Net from a gig by size. No gig size leaves you poorer than saying no.';
+  const atOffer = (pick: (point: GigCheckResult['curve'][number]) => number) =>
+    pick(curve.find((point) => point.gig >= marked) ?? curve[curve.length - 1]);
 
   return (
     <figure>
-      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={summary} className="h-auto w-full font-sans">
-        {lossZone && (
-          <rect
-            x={x(lossZone.from)}
-            y={PLOT.top}
-            width={Math.max(x(lossZone.to) - x(lossZone.from), 2)}
-            height={PLOT.bottom - PLOT.top}
-            className="fill-cliff/15"
-          />
-        )}
-        <line x1={PLOT.left} x2={PLOT.right} y1={zeroY} y2={zeroY} className="stroke-gray-400" />
-        <path
-          d={linePath(curve.map((point) => [x(point.gig), y(point.netDoNothing)]))}
-          fill="none"
-          className="stroke-cliff"
-          strokeWidth={2.5}
-          strokeLinejoin="round"
-        />
-        <path
-          d={linePath(curve.map((point) => [x(point.gig), y(point.netWithPlan)]))}
-          fill="none"
-          className="stroke-kept"
-          strokeWidth={2.5}
-          strokeLinejoin="round"
-        />
-        <line x1={x(marked)} x2={x(marked)} y1={PLOT.top} y2={PLOT.bottom} className="stroke-violet" strokeWidth={2} strokeDasharray="4 3" />
-
-        {lossZone && (
-          <text x={x(lossZone.from) + 4} y={PLOT.top + 10} className="fill-cliff-strong font-pixel" fontSize="9">
-            Loss zone
-          </text>
-        )}
-        <text x={PLOT.left} y={HEIGHT - 8} className="fill-gray-500 font-pixel" fontSize="9">
-          {usd(0)}
-        </text>
-        <text x={WIDTH / 2} y={HEIGHT - 8} textAnchor="middle" className="fill-gray-500 font-pixel" fontSize="9">
-          Size of the gig
-        </text>
-        <text x={PLOT.right} y={HEIGHT - 8} textAnchor="end" className="fill-gray-500 font-pixel" fontSize="9">
-          {usd(maxGig)}
-        </text>
-      </svg>
-
+      <p className="mb-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-700">
+        <span className="inline-flex items-center gap-2">
+          <span aria-hidden className="h-0.5 w-4 rounded-full" style={{ backgroundColor: CHART.plan }} />
+          With a plan
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span aria-hidden className="h-0.5 w-4 rounded-full" style={{ backgroundColor: CHART.doNothing }} />
+          Doing nothing
+        </span>
+      </p>
+      <GigPlot curve={curve} lossZone={lossZone} marked={marked} summary={summary} />
       <figcaption className="mt-3 space-y-3 text-sm text-gray-700">
-        <p className="flex flex-wrap gap-x-5 gap-y-1">
-          <span className="inline-flex items-center gap-2">
-            <span aria-hidden className="h-1 w-5 bg-cliff" />
-            Doing nothing
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <span aria-hidden className="h-1 w-5 bg-kept" />
-            With a plan
-          </span>
-          {lossZone && (
-            <span className="inline-flex items-center gap-2">
-              <span aria-hidden className="size-3 bg-cliff/15 ring-1 ring-cliff" />
-              Loss zone: {usd(lossZone.from)} to {usd(lossZone.to)}
-            </span>
-          )}
-        </p>
+        <table className="sr-only">
+          <caption>Key points on the gig curve</caption>
+          <tbody>
+            <tr>
+              <th>Your offer</th>
+              <td>{usd(marked)}</td>
+              <td>With a plan {signedUsd(atOffer((point) => point.netWithPlan))}</td>
+              <td>Doing nothing {signedUsd(atOffer((point) => point.netDoNothing))}</td>
+            </tr>
+            <tr>
+              <th>Loss zone</th>
+              <td>{lossZone ? `${usd(lossZone.from)} to ${usd(lossZone.to)}` : 'None'}</td>
+            </tr>
+          </tbody>
+        </table>
         <RoughEstimateNote />
       </figcaption>
 
