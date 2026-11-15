@@ -12,7 +12,7 @@ export function aiProvider(): AiProvider | null {
 }
 export const openAiModel = () => process.env.OPENAI_MODEL?.trim() || 'gpt-6.1-sol';
 export const aiSource = () => aiProvider() === 'openai' ? 'openai' as const : 'claude' as const;
-export const aiCacheVersion = () => `${aiProvider()}:${aiProvider() === 'openai' ? openAiModel() : 'claude-opus-5-5'}:v1`;
+export const aiCacheVersion = () => `${aiProvider()}:${aiProvider() === 'openai' ? openAiModel() : 'claude-opus-5-5'}:v2`;
 /** Both providers share one counter; changing providers never resets the daily allowance. */
 export const dailyCallKey = () => `cg:ai:calls:${new Date().toISOString().slice(0, 10)}`;
 function configuredCap(): number {

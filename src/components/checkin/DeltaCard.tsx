@@ -4,6 +4,7 @@ import { formatMoney } from '@/lib/money';
 import type { CheckinResult } from '@/lib/checkinView';
 export function DeltaCard({ result }: { result: CheckinResult }) {
   const before = result.checkin.baseline;
+  const unchanged = before !== undefined && Math.abs(result.checkin.result.magi - before.magi) < 1;
   return (
     <Card>
       <h2 className="text-xl font-bold">Your updated 2026 projection</h2>
@@ -30,6 +31,12 @@ export function DeltaCard({ result }: { result: CheckinResult }) {
           </div>
         ))}
       </dl>
+      {unchanged && (
+        <p className="mt-4 rounded-md bg-air p-3 text-sm">
+          No change: this income was already in your forecast. If it was extra income, raise &ldquo;Still expected for
+          the rest of the year&rdquo; and update.
+        </p>
+      )}
       {result.alerts.length > 0 && (
         <ul className="mt-4 space-y-2">
           {result.alerts.map((alert) => (

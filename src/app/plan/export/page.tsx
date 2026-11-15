@@ -59,7 +59,7 @@ export default async function ExportPage() {
       <h1 className="font-display text-3xl font-bold">CliffGuard · tax-preparer export</h1>
       <p className="mt-2">Tax year 2026 · {demo ? 'Demo access — no payment taken' : 'Unlocked plan'}</p>
       <p>
-        Rules: {before.rulesId} · Engine as of {formatDate(asOf)} · Generated {timestamp}
+        Rules: {before.rulesId} · Engine as of {formatDate(asOf)} · Generated {formatDate(timestamp.slice(0, 10))}
       </p>
       <p className="mt-3 font-semibold">
         Education, not tax advice. Rules as of Nov 2026. Projections are not a filed return; review eligibility, actual

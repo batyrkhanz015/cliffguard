@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DANI, DANI_AS_OF, DANI_GIG } from '@/samples/dani';
 import { diagnose } from '@/engine/diagnose';
 import { optimize } from '@/engine/optimizer';
-import { explainPlan, explanationPlanHash, validateExplanation } from '../ai/explain';
+import { EXPLANATION_SYSTEM, explainPlan, explanationPlanHash, validateExplanation } from '../ai/explain';
 import { dailyCallKey } from '../ai/client';
 import { store } from '../store';
 
@@ -18,6 +18,12 @@ beforeEach(async () => {
   await store.del(dailyCallKey());
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
+describe('explanation system prompt', () => {
+  it('allows invoice timing and requires a note for every move', () => {
+    expect(EXPLANATION_SYSTEM).toMatch(/Invoice timing is a legal/);
+    expect(EXPLANATION_SYSTEM).toMatch(/move note for EVERY move/);
+  });
+});
 describe('grounded explanation with real SDK and fake transport', () => {
   it('falls back after two ungrounded replies', async () => {
     const fetch = vi.fn(async () => reply({ ...output, headline: '$4,321 is saved' })); vi.stubGlobal('fetch', fetch);
