@@ -149,8 +149,9 @@ export function CheckinForm({ data, onSaved }: { data: CheckinReady; onSaved: (r
         </p>
       )}
       <p className="mt-3 text-sm text-gray-600">
-        Expected rest defaults to your old expected amount minus newly received income, floored at $0. Edit it if your
-        forecast changed. Keep it unchanged only for extra income beyond that forecast.
+        &ldquo;Still expected&rdquo; is prefilled with your old forecast minus what you just received, floored at $0, so
+        income you already forecast changes nothing. If the income was extra, raise &ldquo;Still expected for the rest of
+        2026&rdquo; by that amount.
       </p>
       <form
         onSubmit={(event) => {
