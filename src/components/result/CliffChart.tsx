@@ -10,10 +10,10 @@ import { CHART, type Plot } from '@/components/chart/palette';
 import { compactUsd, linePath, linearScale, niceStep, niceTicks } from '@/components/chart/scale';
 import { useChartSize } from '@/components/chart/useChartSize';
 import { useCrosshair } from '@/components/chart/useCrosshair';
-import { cliffCurve } from '@/lib/cliffCurve';
+import { cliffCurve, type CurvePoint } from '@/lib/cliffCurve';
 
 /** A dot on the curve: where the household stands, or would stand, and what it repays there. */
-export type ChartMark = { id: string; label: string; magi: number; repayment: number; tone: 'now' | 'scenario' };
+export type ChartMark = { id: string; label: string; /** Used on phone widths, where room is short. */ shortLabel?: string; magi: number; repayment: number; tone: 'now' | 'scenario' };
 
 type CliffChartProps = { input: HouseholdInput; diagnosis: Diagnosis; marks: readonly ChartMark[] };
 
@@ -49,13 +49,15 @@ export function CliffChart({ input, diagnosis, marks }: CliffChartProps) {
   const hovered = crosshair.index === null ? null : curve[crosshair.index];
 
   const { cliffLabel, placements } = placeAnnotations({ marks, diagnosis, plot, x, y, wallX, points, compact });
+  const atCliff = curve.find((point) => point.magi === diagnosis.cliff);
   const afterCliff = curve.find((point) => point.magi === diagnosis.cliff + 1);
   const summary = `Repayment against income, from ${usd(first)} to ${usd(last)}. It reaches ${usd(topRepayment)} at the ${usd(diagnosis.cliff)} cliff.`;
 
   return (
     <figure>
-      <div ref={ref} className="relative">
-        <svg width={width} height={height} role="img" aria-label={summary} className="block font-sans">
+      <div ref={ref} className="relative min-h-60 w-full min-w-0">
+        {width > 0 && (
+        <svg width={width} height={height} role="img" aria-label={summary} className="block max-w-full font-sans">
           <YAxis ticks={yTicks} y={y} plot={plot} format={(tick) => compactUsd(tick, yStep)} />
           <XAxis ticks={xTicks} x={x} plot={plot} format={(tick) => compactUsd(tick, xStep)} title="Your 2026 income" />
 
@@ -113,6 +115,7 @@ export function CliffChart({ input, diagnosis, marks }: CliffChartProps) {
             {...crosshair.handlers}
           />
         </svg>
+        )}
         {hovered !== null && (
           <ChartTooltip
             x={x(hovered.magi)}
@@ -137,12 +140,12 @@ export function CliffChart({ input, diagnosis, marks }: CliffChartProps) {
             <tr>
               <th>At the cliff</th>
               <td>{usd(diagnosis.cliff)} income</td>
-              <td>{usd(curve.find((point) => point.magi === diagnosis.cliff)?.repayment ?? 0)} repaid</td>
+              <td>{repaidAt(atCliff)} repaid</td>
             </tr>
             <tr>
               <th>Just over the cliff</th>
               <td>{usd(diagnosis.cliff + 1)} income</td>
-              <td>{usd(afterCliff?.repayment ?? 0)} repaid</td>
+              <td>{repaidAt(afterCliff)} repaid</td>
             </tr>
           </tbody>
         </table>
@@ -152,8 +155,10 @@ export function CliffChart({ input, diagnosis, marks }: CliffChartProps) {
 }
 
 /** On a phone the word "repay" goes, to keep labels clear of each other and of the edges. */
+const repaidAt = (point: CurvePoint | undefined): string => (point === undefined ? 'n/a' : usd(point.repayment));
+
 const markText = (mark: ChartMark, compact: boolean): string =>
-  `${mark.label} · ${compact ? '' : 'repay '}${usd(mark.repayment)}`;
+  `${compact ? (mark.shortLabel ?? mark.label) : mark.label} · ${compact ? '' : 'repay '}${usd(mark.repayment)}`;
 
 type Scales = { x: (value: number) => number; y: (value: number) => number };
 
@@ -191,7 +196,8 @@ function placeAnnotations(args: {
   const cliffRect: Rect = { x: left, y: plot.top + 2, width: labelWidth, height: LABEL_HEIGHT };
 
   const bounds: Rect = { x: plot.left, y: plot.top, width: plot.right - plot.left, height: plot.bottom - plot.top };
-  const obstacles: Rect[] = [cliffRect];
+  const wall: Rect = { x: wallX - 2, y: plot.top, width: 4, height: plot.bottom - plot.top };
+  const obstacles: Rect[] = [cliffRect, wall];
   const placements = marks.map((mark) => {
     const size = { width: estimateTextWidth(markText(mark, compact)), height: LABEL_HEIGHT };
     const placement = placeLabel([x(mark.magi), y(mark.repayment)], size, {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { placeLabel } from '../labels';
-import { compactUsd, niceTicks, signedUsd } from '../scale';
+import { compactUsd, niceTicks } from '../scale';
 
 describe('niceTicks', () => {
   it('gives round steps that cover the range', () => {
@@ -19,13 +19,6 @@ describe('compactUsd', () => {
     expect(compactUsd(90_000, 10_000)).toBe('$90K');
     expect(compactUsd(2500, 500)).toBe('$2.5K');
     expect(compactUsd(-500, 500)).toBe('−$500');
-  });
-});
-
-describe('signedUsd', () => {
-  it('formats whole dollars with a true minus', () => {
-    expect(signedUsd(1321.4)).toBe('$1,321');
-    expect(signedUsd(-400)).toBe('−$400');
   });
 });
 

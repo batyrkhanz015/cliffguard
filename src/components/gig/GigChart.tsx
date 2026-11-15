@@ -5,9 +5,9 @@ import type { GigCheckResult } from '@/engine';
 import { useDeferredCommit } from '@/lib/useDeferredCommit';
 import { usd } from '@/engine/format';
 import { CHART } from '@/components/chart/palette';
-import { signedUsd } from '@/components/chart/scale';
 import { formatMoney } from '@/lib/money';
 import { GigPlot } from './GigPlot';
+import { netLabel, offerNets, type ExactNets } from './offerNets';
 import { RoughEstimateNote } from './RoughEstimateNote';
 
 type GigChartProps = {
@@ -15,6 +15,8 @@ type GigChartProps = {
   lossZone: GigCheckResult['lossZone'];
   /** The offer being checked, marked on the chart and set by the slider. */
   gigAmount: number;
+  /** The engine's numbers for `gigAmount`; leave out while the result is for another offer. */
+  exact?: ExactNets;
   onGigChange: (amount: number) => void;
 };
 
@@ -26,7 +28,7 @@ const COMMIT_DELAY_MS = 400;
  * What you keep from a gig of any size, with and without a plan. Losing money turns the band red.
  * Dragging only moves the marker; the offer is re-checked once, when the slider is released.
  */
-export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartProps) {
+export function GigChart({ curve, lossZone, gigAmount, exact, onGigChange }: GigChartProps) {
   const [draft, setDraft] = useState<number | null>(null);
   const onGigChangeRef = useRef(onGigChange);
   useEffect(() => {
@@ -47,8 +49,7 @@ export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartPr
   const summary = lossZone
     ? `Net from a gig by size. Gigs between ${usd(lossZone.from)} and ${usd(lossZone.to)} leave you poorer than saying no.`
     : 'Net from a gig by size. No gig size leaves you poorer than saying no.';
-  const atOffer = (pick: (point: GigCheckResult['curve'][number]) => number) =>
-    pick(curve.find((point) => point.gig >= marked) ?? curve[curve.length - 1]);
+  const nets = offerNets(curve, marked, exact, draft !== null);
 
   return (
     <figure>
@@ -62,7 +63,7 @@ export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartPr
           Doing nothing
         </span>
       </p>
-      <GigPlot curve={curve} lossZone={lossZone} marked={marked} summary={summary} />
+      <GigPlot curve={curve} lossZone={lossZone} marked={marked} nets={nets} summary={summary} />
       <figcaption className="mt-3 space-y-3 text-sm text-gray-700">
         <table className="sr-only">
           <caption>Key points on the gig curve</caption>
@@ -70,8 +71,8 @@ export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartPr
             <tr>
               <th>Your offer</th>
               <td>{usd(marked)}</td>
-              <td>With a plan {signedUsd(atOffer((point) => point.netWithPlan))}</td>
-              <td>Doing nothing {signedUsd(atOffer((point) => point.netDoNothing))}</td>
+              <td>With a plan {netLabel(nets.netWithPlan, nets.approximate)}</td>
+              <td>Doing nothing {netLabel(nets.netDoNothing, nets.approximate)}</td>
             </tr>
             <tr>
               <th>Loss zone</th>
