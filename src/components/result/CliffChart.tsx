@@ -126,7 +126,8 @@ export function CliffChart({ input, diagnosis, marks }: CliffChartProps) {
           />
         )}
       </div>
-      <figcaption className="sr-only">
+      <figcaption>
+        <div className="sr-only">
         <table>
           <caption>Key points on the repayment curve</caption>
           <tbody>
@@ -149,6 +150,7 @@ export function CliffChart({ input, diagnosis, marks }: CliffChartProps) {
             </tr>
           </tbody>
         </table>
+        </div>
       </figcaption>
     </figure>
   );
