@@ -20,7 +20,6 @@ type GigOptionsTableProps = {
   /** A failed check; shown with a retry, above the previous result when there is one. */
   error: string | null;
   onRetry: () => void;
-  onSeePlan: () => void;
 };
 
 function netOf(result: GigCheckView, id: GigOptionId): number | null {
@@ -37,7 +36,7 @@ function Cell({ label, value }: { label: string; value: string }) {
 }
 
 /** Four ways to answer an offer, side by side: what you keep, the credit you keep and what you repay. */
-export function GigOptionsTable({ result, loading, error, onRetry, onSeePlan }: GigOptionsTableProps) {
+export function GigOptionsTable({ result, loading, error, onRetry }: GigOptionsTableProps) {
   if (error !== null && result === null) {
     return (
       <div role="alert" className="rounded-md border border-cliff bg-cliff-soft p-4">
@@ -105,9 +104,6 @@ export function GigOptionsTable({ result, loading, error, onRetry, onSeePlan }: 
           </li>
         ))}
       </ul>
-      <Button onClick={onSeePlan} className="mt-6 w-full sm:w-auto">
-        See the rescue plan
-      </Button>
     </div>
   );
 }

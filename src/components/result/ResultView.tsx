@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { GigChart } from '@/components/gig/GigChart';
 import { GigInput } from '@/components/gig/GigInput';
@@ -34,7 +33,6 @@ function exactNets(result: GigCheckView): ExactNets | undefined {
 /** The result screen (S2) with the gig check (S3) on it. */
 export function ResultView({ household }: { household: LoadedHousehold }) {
   const { input, diagnosis } = household;
-  const router = useRouter();
   const [extra, setExtra] = useState(0);
   const gig = useGigCheck(household.lastGig);
 
@@ -67,12 +65,6 @@ export function ResultView({ household }: { household: LoadedHousehold }) {
 
       <ReportChangeCard reportChange={diagnosis.reportChange} incomeEstimate={input.marketplace.incomeEstimate} />
 
-      <div>
-        <Link href="/plan" className={`${buttonClasses('primary')} w-full sm:w-auto`}>
-          See my rescue plan
-        </Link>
-      </div>
-
       <Card>
         <h2 className="type-display text-2xl sm:text-3xl">Got an offer?</h2>
         <div className="mt-5 space-y-8">
@@ -82,7 +74,6 @@ export function ResultView({ household }: { household: LoadedHousehold }) {
             loading={gig.loading}
             error={gig.error}
             onRetry={gig.retry}
-            onSeePlan={() => router.push('/plan')}
           />
           {gig.result !== null && gig.offer !== null && (
             <GigChart
@@ -95,6 +86,12 @@ export function ResultView({ household }: { household: LoadedHousehold }) {
           )}
         </div>
       </Card>
+
+      <div>
+        <Link href="/plan" className={`${buttonClasses('primary')} w-full sm:w-auto`}>
+          See my rescue plan
+        </Link>
+      </div>
 
       <div className="space-y-3">
         <HowWeGotThis input={input} diagnosis={diagnosis} />
