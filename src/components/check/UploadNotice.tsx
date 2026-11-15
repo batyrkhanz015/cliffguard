@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/Button';
 import { EligibilityNoticeExtractionSchema, type EligibilityNoticeExtraction, type NoticeSource } from '@/lib/noticeExtraction';
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from '@/lib/uploadLimit';
 import { NoticeRequests } from '@/lib/noticeRequests';
-import { demoNotice } from '@/samples/demoNotice';
 import { ExtractionConfirmCard } from './ExtractionConfirmCard';
 
 const Reply = z.object({ extraction: EligibilityNoticeExtractionSchema, confirmed: z.literal(false) });
@@ -16,7 +15,7 @@ function failureMessage(code: unknown, retry: string | null): string {
   if (code === 'NOT_RECOGNIZED') return "This doesn't look like a Marketplace eligibility notice. Enter the numbers below.";
   if (code === 'FILE_TOO_LARGE') return `Choose one file of ${MAX_UPLOAD_MB} MB or less. You can also enter the numbers below.`;
   if (code === 'UNSUPPORTED_FILE_TYPE') return 'Choose a PDF, PNG, JPEG or WebP notice. You can also enter the numbers below.';
-  if (code === 'AI_UNAVAILABLE') return 'Notice reading is unavailable. Try the demo notice or enter the numbers below.';
+  if (code === 'AI_UNAVAILABLE') return 'Notice reading is unavailable. Enter the numbers below, or use Dani’s numbers to try the demo.';
   if (code === 'RATE_LIMITED') {
     const seconds = Number(retry);
     return Number.isFinite(seconds) && seconds > 0 ? `Upload limit reached. Try in ${Math.ceil(seconds / 60)} min, or enter the numbers below.` : 'Upload limit reached. Try later or enter the numbers below.';
@@ -56,31 +55,24 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
     setState({ kind: 'idle' });
   }
 
-  function showDemo() {
-    requests.cancel();
-    focusAfterCancel.current = false;
-    setFile(null);
-    if (inputRef.current) inputRef.current.value = '';
-    setState({ kind: 'confirm', extraction: demoNotice(), source: 'demo' });
-  }
-
-  function chooseFiles(files: FileList | null): boolean {
+  function chooseFiles(files: FileList | null) {
+    if (!files?.length) return;
     requests.cancel();
     lastRequest.current = 'file';
     focusAfterCancel.current = false;
-    const selected = files?.[0] ?? null;
-    const error = files && files.length > 1
+    const selected = files[0];
+    const error = files.length > 1
       ? 'Choose one notice at a time. Drop a single PDF, PNG, JPEG or WebP file.'
-      : selected ? fileError(selected) : null;
+      : fileError(selected);
     if (error) {
       setFile(null);
       if (inputRef.current) inputRef.current.value = '';
       setState({ kind: 'error', message: error, canRetry: false });
-      return false;
+      return;
     }
     setFile(selected);
-    setState({ kind: 'idle' });
-    return selected !== null;
+    // Pass the selected file directly: React state still holds the previous file here.
+    void read('file', selected);
   }
 
   function dragEnter(event: DragEvent<HTMLButtonElement>) {
@@ -102,23 +94,27 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
     dragDepth.current = 0;
     setDragging(false);
     if (state.kind === 'loading' || event.dataTransfer.files.length === 0) return;
-    const files = event.dataTransfer.files;
-    if (chooseFiles(files) && inputRef.current) inputRef.current.files = files;
+    chooseFiles(event.dataTransfer.files);
   }
 
-  async function read(source: 'file' | 'sample') {
+  async function read(source: 'file' | 'sample', selected: File | null = file) {
     requests.cancel();
     lastRequest.current = source;
-    if (source === 'file' && !file) { setState({ kind: 'error', message: 'Choose a notice first, or use the sample notice.', canRetry: false }); return; }
-    const error = source === 'file' && file ? fileError(file) : null;
+    if (source === 'file' && !selected) { setState({ kind: 'error', message: 'Choose a notice first, or use the sample notice.', canRetry: false }); return; }
+    const error = source === 'file' && selected ? fileError(selected) : null;
     if (error) {
       setState({ kind: 'error', message: error, canRetry: false }); return;
     }
+    if (source === 'sample') {
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+    focusAfterCancel.current = false;
     const controller = requests.begin();
     setState({ kind: 'loading' });
     try {
       const form = new FormData();
-      if (file) form.set('file', file);
+      if (source === 'file' && selected) form.set('file', selected);
       form.set('docType', 'eligibility_notice');
       const response = await fetch('/api/extract', { method: 'POST', signal: controller.signal,
         headers: source === 'sample' ? { 'content-type': 'application/json' } : undefined,
@@ -142,10 +138,10 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
   return (
     <section aria-label="Read an eligibility notice" className="space-y-4 rounded-md border border-hairline p-4">
       <p className="font-semibold">Upload your eligibility notice</p>
-      <p className="text-sm text-gray-600">Optional. PDF, PNG, JPEG or WebP, up to {MAX_UPLOAD_MB} MB. Your notice is sent to an external AI service to read; CliffGuard does not store the file. Only confirmed values are used in your form; numbers are saved after you finish the check. You can always enter them manually.</p>
+      <p className="text-sm text-gray-600">Optional. Choosing or dropping a file starts reading through an external AI service. CliffGuard does not store the file. Review and confirm the extracted values before using them. You can always enter the numbers manually.</p>
       <input ref={inputRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp" hidden disabled={state.kind === 'loading'}
         aria-label="Eligibility notice file"
-        onChange={(event) => { chooseFiles(event.target.files); }} />
+        onChange={(event) => { chooseFiles(event.target.files); event.target.value = ''; }} />
       <button
         ref={dropAreaRef}
         id="notice-file"
@@ -171,12 +167,11 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
           {file ? `Selected: ${file.name}` : `PDF, PNG, JPEG or WebP, up to ${MAX_UPLOAD_MB} MB`}
         </span>
       </button>
-      <div className="flex flex-wrap gap-3">
-        <Button variant="secondary" disabled={state.kind === 'loading' || !file} onClick={() => void read('file')}>Read notice</Button>
-        <Button variant="quiet" disabled={state.kind === 'loading' || (state.kind === 'confirm' && state.source === 'demo')} onClick={showDemo}>Try demo notice</Button>
-        <Button variant="quiet" disabled={state.kind === 'loading'} onClick={() => void read('sample')}>Read sample with AI</Button>
+      <div className="space-y-3 rounded-md border border-violet/30 bg-violet/5 p-4">
+        <p className="font-semibold">No notice handy?</p>
+        <p className="text-sm text-gray-700">See how it works with a fictional sample notice. AI reads the sample PDF, then you review the results.</p>
+        <Button disabled={state.kind === 'loading'} onClick={() => void read('sample')}>Read sample with AI</Button>
       </div>
-      <p className="text-sm text-gray-600">Try demo notice works without AI and uses fictional sample values. It does not read your selected file.</p>
       {state.kind === 'loading' && <div role="status" aria-live="polite"><p>Reading your notice… usually 10–20 s</p><Button variant="quiet" onClick={cancel}>Cancel</Button></div>}
       {state.kind === 'error' && <div role="alert" className="text-sm"><p>{state.message}</p>{state.canRetry && <Button variant="quiet" onClick={() => void read(lastRequest.current)}>Retry</Button>}</div>}
       {state.kind === 'confirm' && <ExtractionConfirmCard key={state.source} extraction={state.extraction} source={state.source} onCancel={cancel} onConfirm={(notice) => { onConfirm(notice, state.source); cancel(); }} />}

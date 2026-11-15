@@ -121,7 +121,7 @@ npm test
 npm run lint && npm run typecheck
 ```
 
-It runs with **no environment variables**: state is kept in memory, "Explain my plan" uses a calculation-based template explanation, and notice upload offers an offline, clearly labelled demo notice.
+It runs with **no environment variables**: state is kept in memory and "Explain my plan" uses a calculation-based template explanation. Notice values can be entered manually; **Use Dani's numbers** loads a fictional family without an AI call.
 
 To go further, copy `.env.example` to `.env.local`:
 - Set `AI_PROVIDER=openai` and `OPENAI_API_KEY` for OpenAI. `OPENAI_MODEL` defaults to `gpt-6.1-sol`; `AI_PROVIDER=anthropic` with `ANTHROPIC_API_KEY` keeps Claude available as an alternative. Requests go directly to the selected provider; no AI Gateway account is required.

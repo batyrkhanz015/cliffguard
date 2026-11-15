@@ -30,7 +30,7 @@ Use a clean checkout or a separate worktree if T7 has uncommitted changes. If th
 
 - `/plan`: load Dani's family if needed, choose **Unlock Year demo — free**, then explain the plan or open check-ins/calendar/export.
 - `/checkin`: update 2026 figures, inspect before/after results and history, calculate the 2027 floor, download `.ics`.
-- `/check?step=2`: click/drop a notice; **Try demo notice** is offline. **Read notice** and **Read sample with AI** require `ANTHROPIC_API_KEY`.
+- `/check?step=2`: choosing/dropping a notice starts AI reading automatically. The violet sample panel has one **Read sample with AI** button. Both use the configured OpenAI/Anthropic provider; **Use Dani's numbers** still loads the full form without AI. See `openai-integration.md` and `notice-upload.md` for current configuration and controls.
 
 No LLM key is needed for the calculation-based explanation, offline notice demo, check-ins, calendar, unlock or export. Add `ANTHROPIC_API_KEY` to this checkout's `.env.local` and restart to enable live extraction/explanation. Production also needs the existing Upstash configuration.
 
