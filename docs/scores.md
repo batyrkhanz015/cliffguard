@@ -357,3 +357,36 @@ G2 scored the spec as promised. G3 scores what is submittable today. The 7.0 for
 - The doubled panel and console error right after the unlock moment.
 - A tax-savvy juror finding the QBI omission in the most-quoted number.
 - Sessions lost on serverless if Upstash is not configured.
+
+# G4 pre-submit score: CliffGuard (2026-11-15)
+
+Judged: live landing HTML (WebFetch), docs/qa.md G4 section as reported, earlier fact-checks in docs/scores.md. I did not re-walk the full flow in a browser.
+
+| Criterion | Weight | Score | Evidence |
+|---|---|---|---|
+| Works | 40% | 7.0 | Live on Vercel and Upstash, QA steps 1-13 pass including phone width, grounded explanation in 7 s. But the unlock is a no-payment demo, so the jury path (Stripe test checkout with a 4242 hint) is not shown, and two majors were still open. |
+| Sell | 20% | 6.5 | Clear promise ("Take the gig. Keep your health subsidy.") and a monthly check-in as the reason to return. The landing page states no price, so it is unclear what is paid for. |
+| Who | 15% | 7.5 | Sharp persona (freelancer on HealthCare.gov facing the 2026 uncapped repayment and 400% cliff) with a Dec 31 trigger. Slide 3 relies on KFF and ObamacareFacts quotes, not people in their own words. |
+| Money | 15% | 5.5 | The niche is narrow and seasonal, and no price or CAC channel is visible on the page. The headline number is commoditized (StateCalc, healthinsurance.org, NerdWallet). |
+| New | 10% | 6.5 | Nobody combines a ranked move optimizer, notice intake and monthly monitoring. But the core number is free elsewhere, and TurboTax and Stride Health sit close. |
+
+**Weighted total: 6.70 / 10** (G3 was 6.88; the gain from deploying is offset by the missing Stripe step and the thin money case).
+
+## Did the G3 fixes land?
+- Deploy and live walk: done.
+- Major bugs: two still being fixed (invoice-timing move missing, unexplained $0 change on a check-in).
+- Evidence, screenshots and deck: partly. The deck is still markdown with [TEAM NAMES] and [ASK] placeholders, and there are no real user quotes.
+
+## Top 3 fixes for the next 45 minutes, ranked by gain per minute
+1. **Put a price and a paywall story on the landing page and in the deck (about 10 min, +0.3 to +0.4).** Add one line such as "Free: your number. $X/yr: moves and monthly check-ins". Add the unit economics slide with a named channel (for example r/freelance, Gig-worker Facebook groups, SEO on "ACA subsidy cliff 2026"). This fixes Sell and Money together.
+2. **Make the demo unlock look like checkout (about 15 min, +0.3).** Show a fake-labeled paywall screen with the test card hint and "demo mode, no charge" text, so the jury path is visibly complete. Say plainly in the deck that Stripe was deferred.
+3. **Finish the deck: fill the placeholders, export the PDF, and check the repo is public (about 20 min, +0.2 to +0.3, and avoids disqualification).** The deck must be a PDF of 10 slides or fewer, the repo must be public with no login, and the README link must work. Replace the sourced quotes with a verbatim-quote slide only if a quick search turns real ones up.
+
+## What would embarrass us on stage
+- A juror asks "where do I pay?" and the answer is "we skipped it".
+- A juror opens the repo and gets a 404 because it is still private.
+- [TEAM NAMES] or [ASK] left in the PDF.
+- The two majors reappearing live, the $0 change in particular.
+- The landing page's "Delete my data" shown without a visible link.
+- A juror pastes numbers into StateCalc, sees the same repayment figure, and asks what is new. Have a one-sentence answer: the optimizer, the notice intake and the monitoring.
+- "Education, not tax advice" with no pointer to a tax professional.
