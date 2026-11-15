@@ -1,7 +1,7 @@
 import type { RuleSet } from '../types';
 
 /**
- * Tax year 2026 (coverage year 2026). Every value comes from research/tax-tables-2026.md,
+ * Tax year 2026 (coverage year 2026). Every value comes from docs/tax-tables-2026.md,
  * which links the primary IRS / HHS sources. Repayment caps were repealed by P.L. 119-21 §71305.
  */
 export const TY2026: RuleSet = {

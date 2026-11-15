@@ -8,7 +8,7 @@ CliffGuard is a web app for freelancers and other variable-income families on He
 - **Repo:** https://github.com/batyrkhanz015/cliffguard
 - **Education, not tax advice.**
 - **Stack:** Next.js 16 (App Router), TypeScript strict, Tailwind 4, Zod, Upstash Redis, deployed on Vercel. AI: OpenAI GPT-6.1, server-side only, with Anthropic as an alternative provider.
-- **Quality:** 584 automated tests (the engine reproduces published IRS, KFF and Morkel examples). Lint and strict typecheck are clean. The jury path was QA'd on production at desktop width and 375 px (`docs/qa.md`).
+- **Quality:** 584 automated tests (the engine reproduces published IRS, KFF and Morkel examples). Lint and strict typecheck are clean. The jury path was QA'd on production at desktop width and 375 px.
 
 ![Landing page](docs/screenshots/landing.png)
 
@@ -31,7 +31,7 @@ CliffGuard is a web app for freelancers and other variable-income families on He
 
 What she does today: guesses, runs a free calculator that prints a bill but no decision, asks a chatbot that may apply the old capped rules, or asks a CPA in March when it is too late. Free calculators stop at the bill; CliffGuard answers "should I take this gig, and what do I do about it?"
 
-Evidence we reproduce exactly (see `docs/spec.md` section 3):
+Evidence we reproduce exactly:
 - IRS: repayment caps are eliminated for tax year 2026.
 - KFF's family of 3 at 407% of the poverty line: $745 owed under the old rules, $34,463 without them.
 - Morkel Financial's single filer at 403%: $7,294 repaid vs $3,289.
@@ -50,7 +50,7 @@ For the Dani sample, the engine computes these on every request:
 | $12k gig, with the plan | keeps $8,548 |
 | $8k gig, doing nothing | net -$1,668 (the "loss zone") |
 
-These are test fixtures from `docs/spec.md` section B; the unit tests assert them, and the app recomputes them from the household inputs rather than reading them from a table.
+These are fixtures in `src/engine/__tests__`; the unit tests assert them, and the app recomputes them from the household inputs rather than reading them from a table.
 
 ## What we sell
 
@@ -61,7 +61,7 @@ These are test fixtures from `docs/spec.md` section B; the unit tests assert the
 | "Explain my plan" | | yes | yes |
 | Monthly check-ins, alerts, calendar, 2027 estimate | | | yes |
 
-People return because income lands monthly and the year has hard deadlines: Dec 31 moves, a monthly check-in that re-projects from real entries, Jan 15 (2027 estimate), Apr 15. See `docs/spec.md` sections 6-7.
+People return because income lands monthly and the year has hard deadlines: Dec 31 moves, a monthly check-in that re-projects from real entries, Jan 15 (2027 estimate), Apr 15.
 
 ## Why it makes money
 
@@ -73,7 +73,6 @@ People return because income lands monthly and the year has hard deadlines: Dec 
   - gross margin about 90%;
   - LTV about $137, so LTV/CAC is about 3.9×;
   - payback on day one, because billing is annual and upfront.
-- Details and sources: `pitch/deck.md` and `research/`.
 
 ![Result](docs/screenshots/result.png)
 ![Gig check](docs/screenshots/gig.png)
@@ -134,7 +133,7 @@ Layout: `src/engine` (rules in `src/engine/rules`), `src/server`, `src/app/api`,
 
 ## Fixture provenance
 
-The engine is tested against published or primary-source cases (`docs/spec.md` section B, `src/engine/__tests__`):
+The engine is tested against published or primary-source cases (`src/engine/__tests__`):
 - **KFF** family-of-3 example (2025 plan year, reproduced with a test-only 2025 rule set in `src/engine/rules/ty2025-enhanced.ts`).
 - **Morkel Financial** single-filer examples ($3,512 and $7,294 under 2026 rules; $3,289 under the 2025 enhanced table).
 - **IRS 2026 draft Form 8962** instructions: poverty-percentage truncation, the 401 rule above 4x the poverty line, and the applicable-figure table.
@@ -142,7 +141,7 @@ The engine is tested against published or primary-source cases (`docs/spec.md` s
 
 ### Rules as of Nov 2026
 
-The tables encode 2026 rules: no repayment cap, the 400% cliff, and bronze/catastrophic plans eligible for HSAs. Tax law is moving; the table values and their sources are in `docs/spec.md` and `research/`. Out-of-scope situations (for example married filing separately) are flagged in the UI instead of guessed.
+The tables encode 2026 rules: no repayment cap, the 400% cliff, and bronze/catastrophic plans eligible for HSAs. Tax law is moving; every table value is in `src/engine/rules/ty2026.ts`, with its official source in `docs/tax-tables-2026.md`. Out-of-scope situations (for example married filing separately) are flagged in the UI instead of guessed.
 
 ## Run it locally
 

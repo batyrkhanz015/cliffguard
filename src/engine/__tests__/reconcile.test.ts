@@ -160,7 +160,7 @@ describe('reconcile (Form 8962, TY2026: no repayment cap)', () => {
     expect(over.repayment).toBe(Math.round(over.aptcReceived));
   });
 
-  // research/tax-tables-2026.md §5 item 10. The example gives no state or filing status: any
+  // docs/tax-tables-2026.md §5 item 10. The example gives no state or filing status: any
   // 48-state household of 2 has FPL $21,150, and TY2026 has no cap, so filing status is moot.
   test('IRS 2026 draft i8962, Allocation Situation 4: household income $71,910 → excess APTC $1,529', () => {
     const r = reconcile(

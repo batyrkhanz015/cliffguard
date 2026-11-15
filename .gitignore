@@ -40,3 +40,15 @@ AGENTS.md
 
 # internal agent instructions (kept locally, not published)
 CLAUDE.md
+
+# build process notes and agent workspace (kept locally, not published)
+.claude/
+docs/team/
+docs/spec.md
+docs/scores.md
+docs/qa.md
+docs/plan.md
+docs/pitch-handoff.md
+docs/handoff.md
+research/
+pitch/

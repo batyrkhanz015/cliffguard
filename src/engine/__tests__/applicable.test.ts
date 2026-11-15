@@ -119,7 +119,7 @@ describe('applicableFigure (TY2026, Rev. Proc. 2025-25)', () => {
     expect(applicableFigure(99, TY2026)).toBe(0.021);
   });
 
-  // IRS 2026 Form 8962 instructions, Table 2 (research/tax-tables-2026.md §2c).
+  // IRS 2026 Form 8962 instructions, Table 2 (docs/tax-tables-2026.md §2c).
   test.each([
     [132, 0.021],
     [133, 0.0314],
