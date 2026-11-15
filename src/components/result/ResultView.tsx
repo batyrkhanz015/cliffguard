@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react';
 import { GigChart } from '@/components/gig/GigChart';
 import { GigInput } from '@/components/gig/GigInput';
 import { GigOptionsTable } from '@/components/gig/GigOptionsTable';
+import Link from 'next/link';
+import { buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { usd } from '@/engine/format';
 import { withExtraIncome } from '@/lib/extraIncome';
@@ -17,6 +19,7 @@ import { FlagsAccordion } from './FlagsAccordion';
 import { Headline } from './Headline';
 import { HowWeGotThis } from './HowWeGotThis';
 import { ReportChangeCard } from './ReportChangeCard';
+import { SampleBanner } from './SampleBanner';
 
 /** The result screen (S2) with the gig check (S3) on it. */
 export function ResultView({ household }: { household: LoadedHousehold }) {
@@ -40,6 +43,7 @@ export function ResultView({ household }: { household: LoadedHousehold }) {
 
   return (
     <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 sm:px-6">
+      {household.isSample && <SampleBanner />}
       <Headline diagnosis={diagnosis} />
       <DaysLeftChip daysToYearEnd={diagnosis.daysToYearEnd} />
 
@@ -52,6 +56,12 @@ export function ResultView({ household }: { household: LoadedHousehold }) {
       </Card>
 
       <ReportChangeCard reportChange={diagnosis.reportChange} incomeEstimate={input.marketplace.incomeEstimate} />
+
+      <div>
+        <Link href="/plan" className={buttonClasses('primary')}>
+          See my rescue plan
+        </Link>
+      </div>
 
       <Card>
         <h2 className="type-display text-2xl sm:text-3xl">Got an offer?</h2>

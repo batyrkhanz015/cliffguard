@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Diagnosis, HouseholdInput } from '@/engine';
 import { NEEDS_BENCHMARK, fetchHousehold, type GigOffer } from './apiClient';
 
-export type LoadedHousehold = { input: HouseholdInput; lastGig: GigOffer | null; diagnosis: Diagnosis };
+export type LoadedHousehold = { input: HouseholdInput; lastGig: GigOffer | null; isSample: boolean; diagnosis: Diagnosis };
 
 export type HouseholdState =
   | { status: 'loading' }
@@ -46,7 +46,7 @@ export function useHousehold(): HouseholdState {
         router.replace('/');
         return;
       }
-      setState({ status: 'ready', household: { input: household.input, lastGig: household.lastGig, diagnosis } });
+      setState({ status: 'ready', household: { input: household.input, lastGig: household.lastGig, isSample: household.source === 'sample_dani', diagnosis } });
     });
     return () => {
       cancelled = true;

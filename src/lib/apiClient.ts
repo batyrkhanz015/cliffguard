@@ -10,7 +10,7 @@ import type { GigCheckView, LeverRow, PlanView } from './planView';
 export type GigOffer = { amount: number; canBillInJanuary: boolean };
 
 export type HouseholdResponse = {
-  household: { input: HouseholdInput; lastGig: GigOffer | null } | null;
+  household: { input: HouseholdInput; lastGig: GigOffer | null; source: 'sample_dani' | 'manual' | 'upload' } | null;
   diagnosis: Diagnosis | null;
 };
 export type PlanResponse = { plan: PlanView; entitled: boolean; levers: LeverRow[] };

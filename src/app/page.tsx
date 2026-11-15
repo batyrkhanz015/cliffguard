@@ -9,9 +9,6 @@ import { RuleChanges } from '@/components/landing/RuleChanges';
 import { TryDaniButton } from '@/components/landing/TryDaniButton';
 import { buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { formatMoney } from '@/lib/money';
-import { US_STATE_NAMES } from '@/lib/usStates';
-import { DANI, DANI_GIG } from '@/samples/dani';
 
 const DECISIONS = [
   {
@@ -39,35 +36,6 @@ const NOT_FOR = [
   "Incomes far over the line. We'll tell you, free, what to set aside.",
   'People with health insurance through work.',
 ] as const;
-
-/** Sample inputs only; every result is computed by the engine after the click. */
-function DaniSample() {
-  const [dani, partner] = DANI.adults;
-  const facts = [
-    ['Household', `${DANI.householdSize} people, ${US_STATE_NAMES[DANI.state]}`],
-    ['Told HealthCare.gov', formatMoney(DANI.marketplace.incomeEstimate)],
-    ['Credit each month', formatMoney(DANI.marketplace.aptcMonthly, { cents: true })],
-    ['New December offer', formatMoney(DANI_GIG.amount)],
-  ] as const;
-  return (
-    <Card surface="dark" className="mt-8 max-w-xl">
-      <p className="type-eyebrow text-violet-link">The sample</p>
-      <p className="mt-2 font-display text-2xl font-extrabold uppercase">{dani.label}&apos;s family</p>
-      <p className="mt-1 text-gray-300">
-        {dani.label} freelances in design. {partner && `${partner.label} works part time.`} Two kids.
-      </p>
-      <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4">
-        {facts.map(([term, value]) => (
-          <div key={term}>
-            <dt className="text-sm text-gray-400">{term}</dt>
-            <dd className="tabular mt-0.5 text-lg font-semibold">{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className="mt-5 text-sm text-gray-400">Sample inputs. Every result is computed live.</p>
-    </Card>
-  );
-}
 
 function Check() {
   return (
@@ -122,7 +90,6 @@ export default async function Home() {
           </div>
           <div>
             <CliffIllustration />
-            <DaniSample />
           </div>
         </div>
       </section>
