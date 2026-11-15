@@ -83,7 +83,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 
 ## Slide 5. One click: the bill, the decision, and the legal way to say yes
 
-- **Try Dani's family** opens her result: MAGI **$122,036**, cliff **$128,600**, **$6,564** of headroom, **$1,697** due in April if nothing changes.
+- **Try Dani's family** (inside the calculator) opens her result: MAGI **$122,036**, cliff **$128,600**, **$6,564** of headroom, **$1,697** due in April if nothing changes.
 - Gig check: take the $12k gig and do nothing, she keeps **$1,321**. With the rescue plan she keeps **$8,548**. An $8k gig does nothing but lose money (loss zone).
 - **See the rescue plan:** bill $3,000 of not-yet-invoiced work in January, buy the planned laptop now, top up her HSA. "Keep my cash" puts liquid moves first.
 - Every number is computed live on the server for each request. Only Dani's sample inputs are fixed.
@@ -170,7 +170,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 
 ## Slide 10. Try it now, no login. Free diagnosis, $79 to keep watching
 
-- **Live:** [LIVE URL] (QR code). Click **Try Dani's family**. Phone-width tested.
+- **Live:** [LIVE URL] (QR code). Click **Check my numbers**, then **Try Dani's family**. Phone-width tested.
 - **Repo:** https://github.com/batyrkhanz015/cliffguard. Engine, 553 tests, README with architecture. Built in 24 hours with a 7-agent Claude Code team (researcher, strategist, judge, builder, code reviewer, QA, pitch writer). See `CLAUDE.md`.
 - **Why now:** 2026 is the first tax year with an uncapped cliff. Dec 31 ends the cheapest moves, open enrollment runs to Jan 15, and the first uncapped returns land Feb-Apr 2027.
 - **Next:** Stripe checkout live, the Reddit-quote evidence, then the first 2027-season SEO pages. Ask: `[ASK: feedback / pilot CPAs / intros to freelancer communities]`.
@@ -190,7 +190,7 @@ Use an incognito window at [LIVE URL]. Expected numbers are from the engine fixt
 
 | t | Screen | Say / do |
 |---|---|---|
-| 0:00 | Landing | "Meet Dani: freelance designer, family of four, insured through HealthCare.gov. Since 2026 there is no cap on paying the subsidy back, and a client just offered her $12,000 for December." Click **Try Dani's family**. |
+| 0:00 | Landing | "Meet Dani: freelance designer, family of four, insured through HealthCare.gov. Since 2026 there is no cap on paying the subsidy back, and a client just offered her $12,000 for December." Click **Check my numbers**, then **Try Dani's family** (one-click sample, top of the form). |
 | 0:08 | Result | "She is tracking $122,036. The cliff is $128,600." Drag the slider over the red wall: "One dollar over, and her April bill jumps from $1,697 to $9,342." |
 | 0:22 | Gig check | "Take the gig and do nothing: she keeps $1,321 of $12,000." Drag the gig slider to $8,000: "An $8,000 gig leaves her poorer than saying no. That is why people turn work down." |
 | 0:35 | Plan preview | Click **See the rescue plan**. "Keep my cash is on: bill $3,000 of not-yet-invoiced work in January, buy the laptop she needed anyway, top up her HSA. She keeps $8,548." Flip the toggle: "Or $9,083, with $5,590 going to retirement." |

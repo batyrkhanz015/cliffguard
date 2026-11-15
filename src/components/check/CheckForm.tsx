@@ -27,6 +27,7 @@ import { StepMarketplace } from './StepMarketplace';
 import { StepOptions } from './StepOptions';
 import { StepPlan } from './StepPlan';
 import { StepWho } from './StepWho';
+import { TryDaniButton } from './TryDaniButton';
 
 const STEP_TITLES: Record<StepNumber, string> = {
   1: "Where you live. Who's on your return.",
@@ -226,6 +227,16 @@ export function CheckForm({ initialStep }: { initialStep: StepNumber }) {
             : filledSample ? "Dani's sample numbers are filled in. Change anything you like." : ''}
         </p>
         <CheckProgress step={step} />
+
+        {step === 1 && (
+          <aside className="mt-6 flex flex-col gap-3 rounded-md border border-violet/40 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-700">
+              <span className="font-semibold">Just exploring?</span> Load a sample family and see a full result in
+              seconds.
+            </p>
+            <TryDaniButton />
+          </aside>
+        )}
 
         <form ref={formRef} noValidate onSubmit={handleSubmit} className="mt-6">
           <Card>

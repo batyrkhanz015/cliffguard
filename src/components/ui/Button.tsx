@@ -1,13 +1,18 @@
 import type { ButtonHTMLAttributes } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'quiet';
+type Variant = 'primary' | 'glitter' | 'secondary' | 'quiet';
 /** The section the button sits on; outlined and quiet buttons change on dark. */
 type Surface = 'light' | 'dark';
 
 const BASE =
   'inline-flex min-h-12 items-center justify-center gap-2 rounded-md text-base font-semibold transition-colors disabled:cursor-not-allowed';
 
+/** The hero call to action: tall, solid violet with a moving sheen (see `.btn-glitter` in globals.css). */
+const GLITTER =
+  'btn-glitter min-h-14 w-full flex-col gap-0 bg-violet px-8 py-3 text-xl text-white hover:bg-violet-deep active:bg-violet-deep sm:min-h-16 sm:min-w-[30rem] sm:w-auto sm:text-2xl';
+
 const VARIANTS: Record<Variant, Record<Surface, string>> = {
+  glitter: { light: GLITTER, dark: GLITTER },
   primary: {
     light: 'bg-violet px-6 text-white hover:bg-violet-deep disabled:bg-violet/60',
     dark: 'bg-violet px-6 text-white hover:bg-violet-deep disabled:bg-violet/60',
