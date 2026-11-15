@@ -70,9 +70,6 @@ export function CliffIllustration() {
           400% of poverty line
         </text>
       </svg>
-      <figcaption className="mt-3 text-sm text-gray-400">
-        Illustration, not your numbers. Yours are computed from what you enter.
-      </figcaption>
     </figure>
   );
 }
