@@ -1,43 +1,38 @@
 # Eligibility notice upload (Task 9)
 
-The Marketplace step can read one PDF, PNG, JPEG or WebP eligibility notice (up to 5 MiB), or the bundled synthetic sample. **Read notice** and **Read sample with AI** call the real Anthropic SDK on the server. Neither path substitutes pre-parsed facts for extraction. The clickable drop area opens the native file picker; its file control stays hidden. Dropping or selecting a file does not start an AI call.
+## Current interface
 
-At the user's request, **Try demo notice** is a separate, explicitly labeled offline preview. It uses fictional sample inputs matching the bundled PDF, without reading a file or making any network/AI request. The confirmation card labels them as demo values, and a persistent form message identifies the sample data after confirmation. Demo values use manual provenance rather than claiming an uploaded document was read. Only sample inputs are fixed; all financial outputs still come from the calculation engine. Manual entry remains available throughout.
+Open `/check?step=2`. Clicking the dashed upload area opens the native file picker; dropping or choosing one valid PDF, PNG, JPEG or WebP (up to 4 MB) starts AI reading immediately. The disclosure above the area explains automatic transmission to the external AI service. The separate **Read notice** button has been removed.
 
-## Local setup
+A violet sample panel below the upload area contains one **Read sample with AI** button. It sends the bundled fictional PDF through the same real extraction API and then asks the user to review its values. It never reads a previously selected personal file. The duplicate offline **Try demo notice** button has been removed; **Use Dani's numbers** at the top of the form remains the way to explore the full questionnaire without AI.
 
-Use the existing `.env.example` entries in a local server environment:
+Failed AI reading never silently substitutes sample values. Manual entry remains available. Cancellation and stale-response checks prevent a cancelled or replaced request from applying results. Retry resends the original file or sample choice. The picker resets after selection, allowing the same file to be chosen again after a failed or cancelled read. Selecting an invalid/multiple-file upload makes no AI call.
 
-- `ANTHROPIC_API_KEY`: server-only Anthropic key; never a `NEXT_PUBLIC_` variable.
-- `CLAUDE_ENABLED=true`: set to `false` to disable all extraction calls.
-- `CLAUDE_DAILY_CALL_CAP=1000`: maximum application requests dispatched per UTC day; zero or an invalid value disables calls.
-- Production needs the existing Upstash credentials for counters and limits. Development uses the established in-memory store when Upstash is absent.
+## Provider and limits
 
-No key is necessary to run the rest of the check. Missing keys, disabled extraction, exhausted budget, refusals, malformed output, provider/network failures and timeouts all produce a manual-entry fallback. Customer messages do not expose configuration or raw provider errors. Do not log uploaded bytes, evidence, SDK responses or exceptions.
+Server-only provider code lives in `src/server/ai`. Configure `AI_PROVIDER=openai`, `OPENAI_API_KEY` and optional `OPENAI_MODEL` in an ignored local environment file; the default OpenAI model is `gpt-6.1-sol`. Anthropic remains available with `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`. See `openai-integration.md` for the integration and live verification.
 
-To preview without a key, open `/check?step=2` and choose **Try demo notice**, review/edit the fictional values, then choose **Use these demo values**. Complete the remaining questions, or use **Use Dani's numbers** to fill the entire questionnaire with sample inputs. Once a key is available, set `ANTHROPIC_API_KEY` in the running server's `.env.local`, leave `CLAUDE_ENABLED=true`, and restart the server. **Read notice** and **Read sample with AI** then use live extraction; no code change is needed. The offline demo stays available as an explicit choice, never as an automatic replacement for a failed real upload. This does not implement T10 explanation or the deferred T12 Q&A.
+- `AI_ENABLED=false` forces manual/template fallbacks.
+- `AI_DAILY_CALL_CAP` caps requests across all visitors and both providers; the local demo uses 100/day. Invalid/zero values disable calls. Legacy Anthropic-only controls remain supported.
+- Extraction allows 3 requests/hour/session and 10/day/IP, a 4 MB file plus a 16 KiB multipart envelope, 4,000 output tokens/call and a 25-second provider timeout. Failed dispatched requests consume daily slots.
+- The global counter is `cg:ai:calls:YYYY-MM-DD`, reserved atomically before dispatch. Development uses the in-memory store when Upstash is absent; production needs shared storage.
+- Input-token/page limits and a direct dollar budget remain future work. Provider request caps are not dollar budgets.
 
-The current request uses `claude-opus-5-5`, `max_tokens: 1200`, low effort, adaptive thinking, no tools, Zod structured output, and the `server-side-fallback-2026-07-01` beta with `fallbacks: 'default'`. The SDK has explicit logging disabled, no automatic retries, a 25-second timeout and caller-abort propagation. Default provider fallbacks can have their own billing; the application cap counts SDK requests, not internal provider attempts. Failed or aborted dispatched requests consume the reserved daily slot.
-
-## API and save semantics
+## API and confirmation
 
 `POST /api/extract` accepts exactly one of:
 
-- Multipart fields `file` (one file) and `docType=eligibility_notice` (one string).
+- Multipart fields `file` (one file) and `docType=eligibility_notice`.
 - JSON `{ "sample": "dani_notice" }` with no extra fields.
 
-A successful response is `{ extraction, warnings, confirmed: false }`. The extraction schema and range checks live in `src/lib/noticeExtraction.ts`; the server additionally leaves values with no nonblank matching evidence quote null. The card permits corrections and blank/manual values. Deterministic warnings cover the coverage year, credit above premium, and reviewing the state notice's household count against the tax return. Filing status and plan coverage are never inferred.
+A successful response is `{ extraction, warnings, confirmed: false }`. The server validates the schema, ranges, type signatures and nonblank evidence for extracted fields. Missing evidence leaves a value null. Neither personal uploads nor sample reading change form answers until the user confirms them. The card supports corrections and blank/manual fields. Filing status and plan coverage are never inferred.
 
-The route applies both existing generic rate limiters: 3 requests/hour/session and 10 requests/day/IP. It bounds the incoming stream before multipart parsing (5 MiB plus 16 KiB for the envelope), validates file size/type and basic byte signatures, and keeps uploaded data only in request memory. A global daily slot is reserved atomically with `store.incr('cg:claude:calls:YYYY-MM-DD')` before dispatch. Rate-limit and budget counters are the only extraction-path writes; no household or document is stored. Canceled and stale client requests cannot apply their result.
+Confirmation patches non-null state, household size, income estimate, APTC, premium and metal values into the browser draft. Existing answers survive. Year and plan name are displayed for review; the calculator still checks 2026. Only finishing the full questionnaire saves the household, using the existing validated final PUT and upload-provenance header. No extraction or confirmation call saves a household or document. Changing between personal manual/upload entry preserves household work; switching between Dani and personal data keeps the existing reset semantics.
 
-Confirmation only patches non-null state, household size, income estimate, APTC, premium and metal values in the browser draft. Existing income, tax filing, coverage, options and other answers survive. Year and plan name are displayed for review; this calculator still checks 2026. Blank fields preserve existing draft answers. Direct step-2 visitors are prompted to complete household questions before advancing to the plan and income questions.
-
-**T6/T7 merge point:** `src/app/api/household/route.ts` now accepts optional `x-cliffguard-input-source: upload` on the existing fully validated final PUT. Other clients default to `manual`. `sendJson` gained optional request headers/signal; the body remains the existing `HouseholdInput`. The CheckForm sets this header only after a real extraction's confirmation applies values. The confirmation callback carries `NoticeSource` (`upload` or `demo`); preserve this distinction and the draft's demo indicator when merging. Cancelled/unconfirmed uploads do not change provenance; confirmed demo values and “Use Dani's numbers” reset it to manual. No extraction or confirmation calls PUT. Preserve this additive source selection if merging another T6 handler implementation. No plan/result pages changed.
-
-**T6 household-helper merge point:** `replaceInput` in `src/server/household.ts` preserves household state when provenance changes `manual` → `upload` or `upload` → `manual`: these are two entry methods for the same personal household. The saved gig, proof/done progress, check-in history, preferences and entitlement survive, so changing entry method does not discard the export scenario or tracked work. Crossing between `sample_dani` and either personal source still resets gig, progress and check-ins; preferences and entitlement survive as before. Preserve this minimal source-boundary correction with the provenance header when integrating another T6 implementation; the stored schema and engine inputs are unchanged.
+Uploaded bytes stay in request memory. Do not log bytes, evidence, raw provider responses, exceptions or credentials. Missing keys, refusals, invalid responses, quota/network failures, timeouts and exhausted caps return sanitized manual-entry errors.
 
 ## Sample and verification
 
-`node scripts/make-sample-notice.ts` (Node 24+) regenerates `public/samples/dani-eligibility-notice.pdf` with the development-only `pdf-lib` dependency. The committed one-page PDF has a SAMPLE watermark and synthetic/not-valid disclaimers, and shows 2026, TX, household 4, annual estimate $105,000, APTC $778.50/month, premium $1,240/month and Bronze. `next.config.ts` explicitly includes this asset in the `/api/extract` production trace.
+`public/samples/dani-eligibility-notice.pdf` is a one-page synthetic notice with SAMPLE/not-valid disclaimers, year 2026, TX, household 4, annual estimate $105,000, APTC $778.50/month, premium $1,240/month and Bronze. `node scripts/make-sample-notice.ts` (Node 24+) regenerates it with the development-only `pdf-lib` dependency. `next.config.ts` includes it in the extraction production trace.
 
-Tests exercise the real SDK with a fake fetch transport; they never use paid API calls. Offline-demo tests exercise sample confirmation through form validation and the real calculation engine, and verify that demo provenance is not uploaded data. Run `npm run lint`, `npm run typecheck` and `npm test`. Before release with a real key, manually use **Read sample with AI**, verify its numbers/evidence, edit one value, confirm, complete the remaining questions and check the final household source is upload. Also check cancel/retry, a non-notice, and kill-switch/manual fallback. Browser interaction and paid live extraction must be verified separately; successful fake-transport tests do not establish live model quality or latency.
+Provider tests exercise real SDKs with fake transports. Live OpenAI extraction and a grounded explanation were verified separately using the fictional PDF and a disposable Dani session. The simplified interface passed lint, TypeScript, 21 relevant request/provenance/confirmation tests, direct component-event checks (with a fake transport) for picker/drop automatic reading, the current file payload, sample isolation, invalid/multiple files, retry, cancellation, same-file reselection and confirmation gating, plus a live HTTP check of the rendered controls. These event checks used a hook harness rather than a browser; interactive browser verification remains manual when the browser runtime is unavailable.
