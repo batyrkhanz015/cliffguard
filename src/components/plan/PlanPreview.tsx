@@ -10,6 +10,7 @@ import type { LoadedHousehold } from '@/lib/useHousehold';
 import { KeepMyCashToggle } from './KeepMyCashToggle';
 import { LeverList } from './LeverList';
 import { MoveCard } from './MoveCard';
+import { SampleBanner } from '@/components/result/SampleBanner';
 import { Totals } from './Totals';
 import { VerdictBadge } from './VerdictBadge';
 
@@ -49,6 +50,8 @@ export function PlanPreview({ household }: { household: LoadedHousehold }) {
         </Link>
         <h1 className="type-display mt-3 text-4xl sm:text-6xl">Your rescue plan</h1>
       </div>
+
+      {household.isSample && <SampleBanner />}
 
       <VerdictBadge
         plan={plan}
