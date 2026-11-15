@@ -26,7 +26,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 - Dani, 37, freelance UX designer in Austin, TX. Married, two kids, insured on HealthCare.gov.
 - A client offers her $12,000 for December. She is tracking $122,036 against a cliff of $128,600.
 - Since 2026 there is no cap on repaying the subsidy, and nobody warned her.
-- CliffGuard: the decision, the legal plan, and monthly watching. Free to try: [LIVE URL]
+- CliffGuard: the decision, the legal plan, and monthly watching. Free to try: https://cliffguard-beta.vercel.app
 
 **Visual:** Product name and tagline over `docs/screenshots/gig.png` (net-vs-gig chart with the red loss zone). Mobile variant `gig-mobile.png` as a small inset.
 
@@ -88,7 +88,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 - **See the rescue plan:** bill $3,000 of not-yet-invoiced work in January, buy the planned laptop now, top up her HSA. "Keep my cash" puts liquid moves first.
 - Every number is computed live on the server for each request. Only Dani's sample inputs are fixed.
 
-**Visual:** Four screenshots in a row: `result.png` then `gig.png` then `plan-locked.png` then `plan-unlocked.png`. Footnote: "rough federal estimate: excludes QBI deduction and state tax." Link: [LIVE URL].
+**Visual:** Four screenshots in a row: `result.png` then `gig.png` then `plan-locked.png` then `plan-unlocked.png`. Footnote: "rough federal estimate: excludes QBI deduction and state tax." Link: https://cliffguard-beta.vercel.app.
 
 **Speaker notes:** This is where the live demo goes, about 60 to 90 seconds (script in the appendix). The juror gets a valuable result in under a minute with no login. If the demo fails, these four screenshots carry the slide.
 
@@ -170,7 +170,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 
 ## Slide 10. Try it now, no login. Free diagnosis, $79 to keep watching
 
-- **Live:** [LIVE URL] (QR code). Click **Check my numbers**, then **Try Dani's family**. Phone-width tested.
+- **Live:** https://cliffguard-beta.vercel.app (QR code). Click **Check my numbers**, then **Try Dani's family**. Phone-width tested.
 - **Repo:** https://github.com/batyrkhanz015/cliffguard. Engine, 553 tests, README with architecture. Built in 24 hours with a 7-agent Claude Code team (researcher, strategist, judge, builder, code reviewer, QA, pitch writer). See `CLAUDE.md`.
 - **Why now:** 2026 is the first tax year with an uncapped cliff. Dec 31 ends the cheapest moves, open enrollment runs to Jan 15, and the first uncapped returns land Feb-Apr 2027.
 - **Next:** Stripe checkout live, the Reddit-quote evidence, then the first 2027-season SEO pages. Ask: `[ASK: feedback / pilot CPAs / intros to freelancer communities]`.
@@ -186,7 +186,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 
 ## A. 90-second live demo script
 
-Use an incognito window at [LIVE URL]. Expected numbers are from the engine fixtures; copy final values from the live app before presenting.
+Use an incognito window at https://cliffguard-beta.vercel.app. Expected numbers are from the engine fixtures; copy final values from the live app before presenting.
 
 | t | Screen | Say / do |
 |---|---|---|
@@ -204,7 +204,7 @@ Do not say "retainer" or "ask the client to hold a check": invoice timing covers
 
 ## B. Claims and placeholders still open
 
-- `[LIVE URL]`, `[TEAM NAMES]`, `[ASK]`: not yet known.
+- `[TEAM NAMES]`, `[ASK]`: not yet known.
 - `[QUOTE 1-3 from research/quotes.md]`: file absent. The three quotes used on slide 3 are sourced from `research/track-01-money.md` (KFF Health News, ObamacareFacts), not Reddit.
 - Screenshots in `docs/screenshots/` not present when this deck was written.
 - Unsourced (assumptions, labelled on slides): CAC by channel, renewal 55%, 8% paying, 1.7 people per household, Income Guard payers and price, B2B2C seats, 1099-earner pool (needs a BLS/Upwork cite), 2026 thresholds for each Income Guard cliff.

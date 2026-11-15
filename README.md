@@ -4,7 +4,7 @@
 
 CliffGuard is a web app for freelancers and other variable-income families on HealthCare.gov. Starting with tax year 2026 the ACA subsidy cliff is back (no income above 400% of the poverty line) and excess advance premium tax credit must be repaid in full. CliffGuard shows whether extra work this year pushes you over that line. It then builds a ranked, dated plan of legal moves that lets you take the work and keep the subsidy.
 
-- **Live app:** TBD at deploy
+- **Live app:** https://cliffguard-beta.vercel.app
 - **Repo:** https://github.com/batyrkhanz015/cliffguard
 - **Education, not tax advice.**
 
