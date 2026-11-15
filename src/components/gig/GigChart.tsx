@@ -65,7 +65,8 @@ export function GigChart({ curve, lossZone, gigAmount, exact, onGigChange }: Gig
       </p>
       <GigPlot curve={curve} lossZone={lossZone} marked={marked} nets={nets} summary={summary} />
       <figcaption className="mt-3 space-y-3 text-sm text-gray-700">
-        <table className="sr-only">
+        <div className="sr-only">
+        <table>
           <caption>Key points on the gig curve</caption>
           <tbody>
             <tr>
@@ -80,6 +81,7 @@ export function GigChart({ curve, lossZone, gigAmount, exact, onGigChange }: Gig
             </tr>
           </tbody>
         </table>
+        </div>
         <RoughEstimateNote />
       </figcaption>
 
