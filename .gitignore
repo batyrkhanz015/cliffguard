@@ -37,3 +37,6 @@ coverage/
 
 # written by next dev
 AGENTS.md
+
+# internal agent instructions (kept locally, not published)
+CLAUDE.md

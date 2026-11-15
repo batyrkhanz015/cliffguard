@@ -166,20 +166,3 @@ To go further, copy `.env.example` to `.env.local`:
 - Production also needs `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, and `DEMO_UNLOCK_ENABLED=true` for the jury path.
 
 Secrets live only in environment variables; `.env*` files are git-ignored.
-
-## How the agent team built it
-
-The project was built with Claude Code. `CLAUDE.md` holds the engineering standards and the hackathon rubric; `.claude/agents/` defines the team.
-
-- A Claude Code **orchestrator** planned, dispatched and integrated. It dispatched subagents: `researcher`, `strategist`, `judge`, `builder`, `code-reviewer`, `qa-tester` and `pitch-writer`.
-- Work ran as a subagent-driven loop: **builder, then code-reviewer, then fix rounds**, with the judge scoring at gates (`docs/scores.md`) and the strategist's spec in `docs/spec.md`, the plan in `docs/plan.md`.
-- **Another coding agent (Codex) built Tasks 8-11** from the same plan: demo unlock, notice extraction, explanation and check-ins. It also built the OpenAI provider, the plan-comparison UI and the simplified notice upload. The orchestrator reviewed and integrated each branch (`docs/team/codex-handoff.md`, `docs/team/openai-integration.md`).
-- **Before release:**
-  - a whole-branch review on the most capable model, with one fix wave;
-  - QA on the production URL at desktop and phone width (`docs/qa.md`);
-  - judge scores at every gate (`docs/scores.md`).
-- Research is in `research/`, handoffs in `docs/team/`.
-
-## Docs
-
-`docs/spec.md` (product spec and engine contract), `docs/plan.md` (task plan), `docs/scores.md` (judge scores), `docs/team/` (build and integration handoffs).

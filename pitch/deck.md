@@ -171,7 +171,7 @@ Why now and why us is folded into slides 2, 4 and 10, to stay within 10 slides.
 ## Slide 10. Try it now, no login. Free diagnosis, $79 to keep watching
 
 - **Live:** https://cliffguard-beta.vercel.app (QR code). Click **Check my numbers**, then **Try Dani's family**. Phone-width tested.
-- **Repo:** https://github.com/batyrkhanz015/cliffguard. Engine, 553 tests, README with architecture. Built in 24 hours with a 7-agent Claude Code team (researcher, strategist, judge, builder, code reviewer, QA, pitch writer). See `CLAUDE.md`.
+- **Repo:** https://github.com/batyrkhanz015/cliffguard. Engine, 584 tests, README with architecture.
 - **Why now:** 2026 is the first tax year with an uncapped cliff. Dec 31 ends the cheapest moves, open enrollment runs to Jan 15, and the first uncapped returns land Feb-Apr 2027.
 - **Next:** Stripe checkout live, the Reddit-quote evidence, then the first 2027-season SEO pages. Ask: `[ASK: feedback / pilot CPAs / intros to freelancer communities]`.
 - Team: The Boys S2 (Batyrkhan Zharov, Ilyas Abutalip, Darkhan Nurlanov)
