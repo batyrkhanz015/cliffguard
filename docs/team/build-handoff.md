@@ -34,7 +34,7 @@ The notice demo never reads a selected file or makes an AI call. It is explicitl
 
 ### Current local preview
 
-1. Open `http://127.0.0.1:3002/unlock`. If needed, load Dani's sample household.
+1. Open `http://127.0.0.1:3002/plan`. If needed, load Dani's sample household.
 2. Choose **Unlock Year demo — free** (or upgrade the Rescue demo) to access every new feature without a payment or LLM key.
 3. Use **Explain my plan** for the calculation-based explanation. Open `/checkin` to update 2026 figures, see deltas/alerts/history, calculate the 2027 estimate or download the calendar.
 4. The header links and existing-household landing banner also lead to these pages. `/check?step=2` retains the clickable/drop notice upload and explicit offline notice demo.

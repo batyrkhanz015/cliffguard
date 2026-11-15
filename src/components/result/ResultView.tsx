@@ -79,9 +79,7 @@ export function ResultView({ household }: { household: LoadedHousehold }) {
               curve={gig.result.curve}
               lossZone={gig.result.lossZone}
               gigAmount={gig.offer.amount}
-              onGigChange={(amount) => {
-                if (amount > 0) gig.check({ amount, canBillInJanuary: gig.offer?.canBillInJanuary ?? false });
-              }}
+              onGigChange={(amount) => gig.check({ amount, canBillInJanuary: gig.offer?.canBillInJanuary ?? false })}
             />
           )}
         </div>

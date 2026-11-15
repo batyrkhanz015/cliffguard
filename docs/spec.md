@@ -708,7 +708,7 @@ Extracted documents are **not stored**. Only the numbers the user confirms enter
 | `POST /api/gig-check` | `{ amount: number; canBillInJanuary: boolean }` | `GigCheckResult` (plan redacted unless entitled) | — | 60/min/session |
 | `POST /api/plan` | `{ gig: {amount, canBillInJanuary} \| null; keepMyCash: boolean; leverOrder: LeverId[] }` | `{ plan: PlanResult \| PlanSummary; entitled: boolean }`; saves preferences | Full plan requires an entitlement | 120/min/session |
 | `PATCH /api/plan/progress` | `{ leverId; done?: boolean; proofsChecked?: number[] }` | `{ ok: true }` | Entitled | 60/min |
-| `POST /api/extract` | multipart `{ file, docType: 'eligibility_notice' }` **or** JSON `{ sample: 'dani_notice' }` | `{ extraction: EligibilityNoticeExtraction; confirmed: false }` | — | 3/h/session, 10/day/IP; file ≤ 5 MB; pdf/png/jpeg/webp |
+| `POST /api/extract` | multipart `{ file, docType: 'eligibility_notice' }` **or** JSON `{ sample: 'dani_notice' }` | `{ extraction: EligibilityNoticeExtraction; confirmed: false }` | — | 3/h/session, 10/day/IP; file ≤ 4 MB; pdf/png/jpeg/webp |
 | `POST /api/checkout` | `{ product: 'year' \| 'rescue' }` | `{ url: string }` | — | 10/h/session |
 | `/success` (server component) | `?session_id=` | Verifies and writes `entitlement`, then redirects | — | — |
 | `POST /api/explain` | `{}` (server uses the stored household and preferences) | `Explanation` (`source: 'claude' \| 'template'`) | Entitled | 10/h/session; cached by planHash |
@@ -742,7 +742,7 @@ Extracted documents are **not stored**. Only the numbers the user confirms enter
 
 | Use | Purpose | Input to Claude | Output schema (Zod) | Caps | Fallback |
 |---|---|---|---|---|---|
-| **E.1 Extraction** (eligibility notice; N1/N2 add `bank_csv`/`invoice` with their own schemas) | Read the notice the user has *today* and pre-fill steps 1–3 | The file as a document or image block inside a delimited "untrusted document" section. No tools. No household data | `{ docType: 'marketplace_eligibility_notice' \| 'not_a_notice'; coverageYear: int 2025–2027 \| null; state: UsStateCode \| null; householdSize: int 1–10 \| null; incomeEstimate: 0–2,000,000 \| null; aptcMonthly: 0–10,000 \| null; premiumMonthly: 0–10,000 \| null; planMetal: enum \| null; planName: string ≤ 80 \| null; evidence: { field: string; quote: string ≤ 100 }[] ≤ 10; warnings: string ≤ 160 [] ≤ 5 }` | max_tokens 1,200; file ≤ 5 MB | "Couldn't read it. Enter the numbers below." The form stays usable |
+| **E.1 Extraction** (eligibility notice; N1/N2 add `bank_csv`/`invoice` with their own schemas) | Read the notice the user has *today* and pre-fill steps 1–3 | The file as a document or image block inside a delimited "untrusted document" section. No tools. No household data | `{ docType: 'marketplace_eligibility_notice' \| 'not_a_notice'; coverageYear: int 2025–2027 \| null; state: UsStateCode \| null; householdSize: int 1–10 \| null; incomeEstimate: 0–2,000,000 \| null; aptcMonthly: 0–10,000 \| null; premiumMonthly: 0–10,000 \| null; planMetal: enum \| null; planName: string ≤ 80 \| null; evidence: { field: string; quote: string ≤ 100 }[] ≤ 10; warnings: string ≤ 160 [] ≤ 5 }` | max_tokens 1,200; file ≤ 4 MB | "Couldn't read it. Enter the numbers below." The form stays usable |
 | **E.2 Explanation** | A plain-English, 3-paragraph explanation of *this* diagnosis and plan; per-move notes | The engine's `Diagnosis` + `PlanResult` (or `GigCheckResult`) JSON plus static lever copy. No free text from the user | `{ headline: string ≤ 140; paragraphs: string ≤ 500 [] 1–3; moveNotes: { leverId: LeverId; note: string ≤ 300 }[]; caveats: string ≤ 200 [] ≤ 4 }` | max_tokens 900; cached by planHash | `templateExplanation(diagnosis, plan)`: deterministic sentences in `src/engine/explainTemplate.ts` (also used when Claude is off) |
 | **E.3 Q&A** | Answer what-ifs ("What if I also sell $4k of stock?") by **calling the engine** | System prompt (rules below) + household summary from the engine + the last 6 turns + the question. Tools: `run_scenario` and `get_deadlines` | Tool `run_scenario` input: `{ label: string ≤ 60; gig?: { amount 0–500k; canBillInJanuary? }; extra?: { selfEmployment?, wages?, capitalGains?, interestOrDividends? } (each −200k–200k); levers?: Partial<Levers>; keepMyCash?: boolean; leverOrder?: LeverId[] }` → returns `{ label, diagnosis: {magi, fplPercent, cliff, headroom, ptc, repayment}, gig?: {netDoNothing, netWithPlan}, plan: {verdict, moves: {leverId, amount, deadline}[], repaymentAfter} }`. Final answer: `{ answer: string ≤ 1,200; scenarioLabels: string[]; outOfScope: boolean; refused: boolean }` | ≤ 3 tool rounds; max_tokens 700 per call; question ≤ 500 chars | "Q&A is unavailable right now. Try the sliders and the toggle." |
 
@@ -776,7 +776,7 @@ Extracted documents are **not stored**. Only the numbers the user confirms enter
 ### E.7 Limits summary
 | Limit | Value |
 |---|---|
-| Upload | ≤ 5 MB; pdf/png/jpeg/webp; 1 file per request |
+| Upload | ≤ 4 MB; pdf/png/jpeg/webp; 1 file per request |
 | Extraction | 3/h per session, 10/day per IP |
 | Explanation | 10/h per session (paid), cached |
 | Q&A | Rescue 10/day, Year 30/day per session; 60/day per IP; ≤ 3 tool rounds |

@@ -1,6 +1,6 @@
 # T11 monthly check-ins
 
-`/checkin` is reachable from the app header and the standalone `/unlock` plan panel. Active Year access enables the form, history, Jan 15 estimate and `.ics` download. Empty sessions get entry links; Rescue and expired access get the Year preview and upgrade/renewal link. `/unlock` remains the plan destination until T7 merges. The T10 explanation component and existing panel mutation coordinator are preserved. This implementation supersedes the check-in/calendar deferral in the earlier T8 integration note.
+`/checkin` is reachable from the app header and the `/plan` access panel. Active Year access enables the form, history, Jan 15 estimate and `.ics` download. Empty sessions get entry links; Rescue and expired access get the Year preview and upgrade/renewal link. The T10 explanation component and existing panel mutation coordinator are preserved. This implementation supersedes the check-in/calendar deferral in the earlier T8 integration note.
 
 ## HTTP contracts
 

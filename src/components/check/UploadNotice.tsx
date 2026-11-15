@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
 import { EligibilityNoticeExtractionSchema, type EligibilityNoticeExtraction, type NoticeSource } from '@/lib/noticeExtraction';
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from '@/lib/uploadLimit';
 import { NoticeRequests } from '@/lib/noticeRequests';
 import { demoNotice } from '@/samples/demoNotice';
 import { ExtractionConfirmCard } from './ExtractionConfirmCard';
@@ -13,7 +14,7 @@ type UploadState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; mes
 
 function failureMessage(code: unknown, retry: string | null): string {
   if (code === 'NOT_RECOGNIZED') return "This doesn't look like a Marketplace eligibility notice. Enter the numbers below.";
-  if (code === 'FILE_TOO_LARGE') return 'Choose one file of 5 MB or less. You can also enter the numbers below.';
+  if (code === 'FILE_TOO_LARGE') return `Choose one file of ${MAX_UPLOAD_MB} MB or less. You can also enter the numbers below.`;
   if (code === 'UNSUPPORTED_FILE_TYPE') return 'Choose a PDF, PNG, JPEG or WebP notice. You can also enter the numbers below.';
   if (code === 'CLAUDE_UNAVAILABLE') return 'Notice reading is unavailable. Try the demo notice or enter the numbers below.';
   if (code === 'RATE_LIMITED') {
@@ -24,7 +25,7 @@ function failureMessage(code: unknown, retry: string | null): string {
 }
 
 function fileError(file: File): string | null {
-  if (file.size > 5 * 1024 * 1024) return failureMessage('FILE_TOO_LARGE', null);
+  if (file.size > MAX_UPLOAD_BYTES) return failureMessage('FILE_TOO_LARGE', null);
   if (file.size === 0 || !['application/pdf', 'image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
     return failureMessage('UNSUPPORTED_FILE_TYPE', null);
   }
@@ -141,7 +142,7 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
   return (
     <section aria-label="Read an eligibility notice" className="space-y-4 rounded-md border border-hairline p-4">
       <p className="font-semibold">Upload your eligibility notice</p>
-      <p className="text-sm text-gray-600">Optional. PDF, PNG, JPEG or WebP, up to 5 MB. Your notice is sent to Claude to read; CliffGuard does not store the file. Only confirmed values are used in your form; numbers are saved after you finish the check. You can always enter them manually.</p>
+      <p className="text-sm text-gray-600">Optional. PDF, PNG, JPEG or WebP, up to {MAX_UPLOAD_MB} MB. Your notice is sent to Claude to read; CliffGuard does not store the file. Only confirmed values are used in your form; numbers are saved after you finish the check. You can always enter them manually.</p>
       <input ref={inputRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp" hidden disabled={state.kind === 'loading'}
         aria-label="Eligibility notice file"
         onChange={(event) => { chooseFiles(event.target.files); }} />
@@ -167,7 +168,7 @@ export function UploadNotice({ onConfirm }: { onConfirm: (extraction: Eligibilit
           {dragging ? 'Drop your notice here' : 'Drag and drop your notice here, or click to choose a file'}
         </span>
         <span role="status" className="mt-2 block break-words text-sm text-gray-600">
-          {file ? `Selected: ${file.name}` : 'PDF, PNG, JPEG or WebP, up to 5 MB'}
+          {file ? `Selected: ${file.name}` : `PDF, PNG, JPEG or WebP, up to ${MAX_UPLOAD_MB} MB`}
         </span>
       </button>
       <div className="flex flex-wrap gap-3">

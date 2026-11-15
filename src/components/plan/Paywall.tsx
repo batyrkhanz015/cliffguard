@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PlanView } from '@/lib/planView';
+import { formatMoney } from '@/lib/money';
 import { requestDemoUnlock } from '@/lib/demoUnlock';
 import type { PlanCoordinator } from '@/lib/planCoordinator';
 import { Button } from '@/components/ui/Button';
@@ -15,7 +16,6 @@ export function Paywall({ plan, demoEnabled, onUnlocked, coordinator, upgrade = 
   const [busy, setBusy] = useState<'year' | 'rescue' | null>(null);
   const [error, setError] = useState('');
   const savings = Math.max(0, plan.repaymentBefore - plan.repaymentAfter);
-  const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
   async function unlock(product: 'year' | 'rescue') {
     setBusy(product);
@@ -44,7 +44,7 @@ export function Paywall({ plan, demoEnabled, onUnlocked, coordinator, upgrade = 
       <p className="type-eyebrow text-violet">Demo access · no payment</p>
       <h2 className="mt-3 text-2xl font-bold">{upgrade ? 'Upgrade your demo to Year' : 'Unlock your exact plan'}</h2>
       <p className="mt-3 text-sm leading-relaxed">See exact amounts, how-to steps, deadlines, a saved proof checklist and an export for your tax preparer.</p>
-      <p className="mt-3 font-semibold">{savings > 0 ? `Your current plan reduces projected repayment by ${dollars.format(savings)}.` : 'Your current plan has no projected repayment reduction. Review your options and deadlines.'}</p>
+      <p className="mt-3 font-semibold">{savings > 0 ? `Your current plan reduces projected repayment by ${formatMoney(savings)}.` : 'Your current plan has no projected repayment reduction. Review your options and deadlines.'}</p>
       <div className="mt-5 rounded border border-violet bg-violet/5 p-4 text-sm">
         <strong>Demo mode: no card, no charge, no subscription.</strong> These buttons grant demo access only. Listed prices describe planned products; checkout is unavailable.
       </div>

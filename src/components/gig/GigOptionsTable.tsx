@@ -17,7 +17,7 @@ type GigOptionsTableProps = {
   result: GigCheckView | null;
   /** True while a check is in flight; the old result stays dimmed underneath. */
   loading: boolean;
-  /** A failed check; shown with a retry. */
+  /** A failed check; shown with a retry, above the previous result when there is one. */
   error: string | null;
   onRetry: () => void;
   onSeePlan: () => void;
@@ -38,7 +38,7 @@ function Cell({ label, value }: { label: string; value: string }) {
 
 /** Four ways to answer an offer, side by side: what you keep, the credit you keep and what you repay. */
 export function GigOptionsTable({ result, loading, error, onRetry, onSeePlan }: GigOptionsTableProps) {
-  if (error !== null) {
+  if (error !== null && result === null) {
     return (
       <div role="alert" className="rounded-md border border-cliff bg-cliff-soft p-4">
         <p className="font-semibold text-cliff-strong">{error}</p>
@@ -64,6 +64,14 @@ export function GigOptionsTable({ result, loading, error, onRetry, onSeePlan }: 
   const withPlan = netOf(result, 'take_with_plan');
   return (
     <div aria-busy={loading || undefined} className={loading ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+      {error !== null && (
+        <p role="alert" className="mb-4 rounded-md border border-cliff bg-cliff-soft px-3 py-2 text-sm text-cliff-strong">
+          {error} Showing the last result.{' '}
+          <button type="button" onClick={onRetry} className="font-semibold underline">
+            Try again
+          </button>
+        </p>
+      )}
       <h3 className="type-display text-2xl sm:text-3xl">
         {doNothing !== null && withPlan !== null && (
           <>

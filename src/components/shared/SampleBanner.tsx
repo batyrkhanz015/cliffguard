@@ -9,7 +9,7 @@ const FACTS = [
   ['Household', `${DANI.householdSize} people, ${US_STATE_NAMES[DANI.state]}`],
   ['Told HealthCare.gov', formatMoney(DANI.marketplace.incomeEstimate)],
   ['Credit each month', formatMoney(DANI.marketplace.aptcMonthly, { cents: true })],
-  ['December offer', formatMoney(DANI_GIG.amount)],
+  ['Sample December offer', formatMoney(DANI_GIG.amount)],
 ] as const;
 
 /** Shown over the sample household only: names the sample inputs and points to the user's own. */

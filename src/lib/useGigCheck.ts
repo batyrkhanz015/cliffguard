@@ -2,27 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { checkGig, type GigOffer } from './apiClient';
+import { gigOutcome, type GigOutcome } from './gigOutcome';
 import { createLatestGate } from './latest';
 import type { GigCheckView } from './planView';
-
-type Outcome = { result: GigCheckView | null; error: string | null };
 
 export type GigCheckState = {
   offer: GigOffer | null;
   result: GigCheckView | null;
   loading: boolean;
   error: string | null;
-  /** Checks an offer; only the newest request's response is applied. */
+  /** Checks an offer; only the newest request's response is applied. A failure keeps the previous result. */
   check: (offer: GigOffer) => void;
   retry: () => void;
 };
 
-const FAILURE = "We couldn't check this offer. Try again.";
-const OUT_OF_RANGE = 'Enter an amount above $0 and up to $500,000.';
-
 /** The gig check for the saved offer, if any, and for each new offer the user enters. */
 export function useGigCheck(saved: GigOffer | null): GigCheckState {
   const gate = useRef(createLatestGate()).current;
+  const resultRef = useRef<GigCheckView | null>(null);
   const [offer, setOffer] = useState<GigOffer | null>(saved);
   const [result, setResult] = useState<GigCheckView | null>(null);
   const [loading, setLoading] = useState(saved !== null);
@@ -30,18 +27,17 @@ export function useGigCheck(saved: GigOffer | null): GigCheckState {
 
   /** The state a response puts us in; null when a newer request has superseded it. */
   const compute = useCallback(
-    async (next: GigOffer): Promise<Outcome | null> => {
+    async (next: GigOffer): Promise<GigOutcome | null> => {
       const token = gate.begin();
       const response = await checkGig(next);
-      if (!gate.isLatest(token)) return null;
-      if (response.ok) return { result: response.data, error: null };
-      return { result: null, error: response.status === 400 ? OUT_OF_RANGE : FAILURE };
+      return gate.isLatest(token) ? gigOutcome(resultRef.current, response) : null;
     },
     [gate],
   );
 
-  const apply = useCallback((outcome: Outcome | null) => {
+  const apply = useCallback((outcome: GigOutcome | null) => {
     if (outcome === null) return;
+    resultRef.current = outcome.result;
     setLoading(false);
     setError(outcome.error);
     setResult(outcome.result);

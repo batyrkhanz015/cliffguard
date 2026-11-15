@@ -1,4 +1,8 @@
+'use client';
+
+import { useCallback, useState } from 'react';
 import type { GigCheckResult } from '@/engine';
+import { useDeferredCommit } from '@/lib/useDeferredCommit';
 import { usd } from '@/engine/format';
 import { linePath, linearScale } from '@/components/chart/scale';
 import { formatMoney } from '@/lib/money';
@@ -16,15 +20,31 @@ const WIDTH = 360;
 const HEIGHT = 230;
 const PLOT = { left: 10, right: 350, top: 16, bottom: 196 } as const;
 const SLIDER_STEP = 500;
+/** Quiet time after the last slider move before the offer is re-checked, if the user never releases. */
+const COMMIT_DELAY_MS = 400;
 
-/** What you keep from a gig of any size, with and without a plan. Losing money turns the band red. */
+/**
+ * What you keep from a gig of any size, with and without a plan. Losing money turns the band red.
+ * Dragging only moves the marker; the offer is re-checked once, when the slider is released.
+ */
 export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartProps) {
+  const [draft, setDraft] = useState<number | null>(null);
+  const commit = useCallback(
+    (amount: number) => {
+      setDraft(null);
+      if (amount > 0 && amount !== gigAmount) onGigChange(amount);
+    },
+    [gigAmount, onGigChange],
+  );
+  const deferred = useDeferredCommit(commit, COMMIT_DELAY_MS);
+
+  const shownAmount = draft ?? gigAmount;
   const maxGig = curve[curve.length - 1].gig;
   const nets = curve.flatMap((point) => [point.netDoNothing, point.netWithPlan, 0]);
   const x = linearScale([0, maxGig], [PLOT.left, PLOT.right]);
   const y = linearScale([Math.min(...nets), Math.max(...nets)], [PLOT.bottom, PLOT.top]);
   const zeroY = y(0);
-  const marked = Math.min(gigAmount, maxGig);
+  const marked = Math.min(shownAmount, maxGig);
   const summary = lossZone
     ? `Net from a gig by size. Gigs between ${usd(lossZone.from)} and ${usd(lossZone.to)} leave you poorer than saying no.`
     : 'Net from a gig by size. No gig size leaves you poorer than saying no.';
@@ -98,7 +118,7 @@ export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartPr
         <label htmlFor="gig-size" className="flex items-baseline justify-between gap-4 font-semibold">
           Try another size
           <output htmlFor="gig-size" className="type-display text-2xl tabular text-violet">
-            {formatMoney(gigAmount)}
+            {formatMoney(shownAmount)}
           </output>
         </label>
         <input
@@ -108,8 +128,15 @@ export function GigChart({ curve, lossZone, gigAmount, onGigChange }: GigChartPr
           max={maxGig}
           step={SLIDER_STEP}
           value={marked}
-          onChange={(event) => onGigChange(Number(event.target.value))}
-          aria-valuetext={`${formatMoney(gigAmount)} gig`}
+          onChange={(event) => {
+            const amount = Number(event.target.value);
+            setDraft(amount);
+            deferred.schedule(amount);
+          }}
+          onPointerUp={deferred.flush}
+          onKeyUp={deferred.flush}
+          onBlur={deferred.flush}
+          aria-valuetext={`${formatMoney(shownAmount)} gig`}
           className="mt-2 h-11 w-full accent-violet"
         />
         {gigAmount > maxGig && (
