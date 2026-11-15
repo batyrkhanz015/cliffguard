@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { SampleBanner } from '@/components/shared/SampleBanner';
-import { Button } from '@/components/ui/Button';
+import { Button, buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { moveKey } from '@/lib/keys';
@@ -69,6 +69,14 @@ export function PlanPreview({ household }: { household: LoadedHousehold }) {
       )}
 
       <Totals plan={plan} netKept={preview.netKept} loading={loading} />
+
+      {!entitled && <div className="flex flex-col gap-3 rounded-md border border-violet/25 bg-violet/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-semibold">See the exact steps behind this plan.</p>
+          <p className="mt-1 text-sm text-gray-600">Compare Rescue and Year. Try either demo with no card or charge.</p>
+        </div>
+        <a href="#plan-access" className={`${buttonClasses('secondary')} shrink-0 px-4`}>Compare access options <span aria-hidden="true">↓</span></a>
+      </div>}
 
       <Card>
         <h2 className="type-display text-2xl sm:text-3xl">Your levers</h2>

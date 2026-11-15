@@ -203,7 +203,7 @@ export class EngineError extends Error {
   }
 }
 
-/** Plain-English explanation of a diagnosis (spec §E.2); produced by the template or by Claude. */
+/** Plain-English explanation of a diagnosis (spec §E.2); produced by the template or by AI. */
 export const ExplanationSchema = z.object({
   headline: z.string().max(140),
   paragraphs: z.array(z.string().max(500)).min(1).max(3),

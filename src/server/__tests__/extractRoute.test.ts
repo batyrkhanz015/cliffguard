@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { POST } from '@/app/api/extract/route';
 import { MAX_UPLOAD_BYTES } from '@/lib/uploadLimit';
-import { extractNotice } from '../claude/extract';
+import { extractNotice } from '../ai/extract';
 import { limit } from '../ratelimit';
 import { store } from '../store';
 import { NOTICE } from '@/test/noticeFixture';
 
 vi.mock('../session', () => ({ getSid: async () => 'upload-test-sid' }));
 vi.mock('../ratelimit', () => ({ limit: vi.fn(async () => ({ ok: true, retryAfterSec: 0 })) }));
-vi.mock('../claude/extract', () => ({ extractNotice: vi.fn() }));
+vi.mock('../ai/extract', () => ({ extractNotice: vi.fn() }));
 function multipart(files = 1, type = 'application/pdf', data = '%PDF-1.7\n', docType = 'eligibility_notice') {
   const body = new FormData(); body.set('docType', docType);
   for (let i = 0; i < files; i++) body.append('file', new File([data], 'notice.pdf', { type }));
@@ -64,7 +64,7 @@ describe('extraction route', () => {
     expect((await POST(request)).status).toBe(413);
     expect(extractNotice).not.toHaveBeenCalled();
   });
-  it.each(['NOT_RECOGNIZED', 'CLAUDE_UNAVAILABLE'] as const)('leaves manual entry available for %s', async (error) => {
+  it.each(['NOT_RECOGNIZED', 'AI_UNAVAILABLE'] as const)('leaves manual entry available for %s', async (error) => {
     vi.mocked(extractNotice).mockResolvedValue({ error });
     const response = await POST(multipart());
     expect(response.status).toBe(error === 'NOT_RECOGNIZED' ? 422 : 503);

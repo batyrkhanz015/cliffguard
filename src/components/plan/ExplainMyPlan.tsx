@@ -8,7 +8,7 @@ import { PLAN_CHANGED_EVENT } from '@/lib/planEvents';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
-const ResponseSchema = ExplanationSchema.extend({ source: z.enum(['claude', 'template']) });
+const ResponseSchema = ExplanationSchema.extend({ source: z.enum(['openai', 'claude', 'template']) });
 type State = { kind: 'idle' | 'loading' | 'stale' } | { kind: 'error'; message: string } | { kind: 'ready'; data: z.infer<typeof ResponseSchema> };
 
 /** Parent keys this component to its current read revision, invalidating all in-flight replies. */

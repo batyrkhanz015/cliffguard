@@ -71,7 +71,7 @@ People return because income lands monthly and the year has hard deadlines: Dec 
 - **Live:** the rules engine, gig check, optimizer, plan, notice upload and extraction, "Explain my plan", check-ins with history and alerts, `.ics` calendar, tax-preparer export, anonymous sessions, rate limits.
 - **Demo unlock instead of Stripe:** real Stripe checkout is deferred. The unlock buttons show the prices but collect no card and charge nothing. They only work when `DEMO_UNLOCK_ENABLED=true`, and enabling it gives every visitor with a saved household access.
 - **Cut:** free-form Q&A ("ask a what-if").
-- **Claude needs a key:** live notice reading and explanations need `ANTHROPIC_API_KEY`. Without it the app uses clearly labelled fallbacks (below).
+- **AI needs a key:** live notice reading and explanations support OpenAI (`OPENAI_API_KEY`) or Anthropic (`ANTHROPIC_API_KEY`). Without the selected provider's key the app uses clearly labelled fallbacks (below).
 
 ## Architecture
 
@@ -80,21 +80,21 @@ People return because income lands monthly and the year has hard deadlines: Dec 
    |  pure, client-safe engine: src/engine/index.ts
    |  (where you stand, gig check, charts)
    v
- Route handlers  src/app/api/*  (Zod on every input; Claude output validated against schemas)
+ Route handlers  src/app/api/*  (Zod on every input; AI output validated against schemas)
    |  session cookie (anonymous, httpOnly) -> store (Upstash Redis | in-memory)
    |  rate limits, redaction, entitlement checks      src/server/*
    |
    +--> Engine, server-only: src/engine/server.ts
    |      optimizer, lever copy, tax estimate; plan amounts never reach the browser unless unlocked
    |
-   +--> Claude, server-only: src/server/claude/*
+   +--> OpenAI or Anthropic, server-only: src/server/ai/*
           reads an uploaded eligibility notice -> structured fields (user confirms them)
           explains the engine's finished numbers in prose (output validated against them)
 ```
 
 - **Engine (deterministic, no I/O).** Every number comes from here: FPL tables, Form 8962 applicable figure, premium tax credit, repayment, gig check, an ordered legal optimizer ("Keep my cash" puts liquid moves first), deadlines, alerts, 2027 estimate.
 - **Server.** Anonymous session id in an httpOnly cookie, a small store, per-session and per-IP limits, redaction of paid plan details for unpaid sessions, `.ics` generation, check-in logic.
-- **Claude's roles are narrow.** It reads documents and explains results. It never computes money. Uploaded text is treated as untrusted, outputs are validated with Zod, and numbers in explanations are checked against the engine.
+- **AI's roles are narrow.** It reads documents and explains results. It never computes money. Uploaded text is treated as untrusted, outputs are validated with Zod, and numbers in explanations are checked against the engine.
 
 Layout: `src/engine` (rules in `src/engine/rules`), `src/server`, `src/app/api`, `src/components`, `src/lib`, `src/samples`.
 
@@ -112,17 +112,22 @@ The tables encode 2026 rules: no repayment cap, the 400% cliff, and bronze/catas
 
 ## Run it locally
 
+Use Node.js 22 or later (required by AI SDK 7).
+
 ```sh
 npm i
 npm run dev        # http://localhost:3000
-npm test           # 553 tests across 45 files
+npm test
 npm run lint && npm run typecheck
 ```
 
 It runs with **no environment variables**: state is kept in memory, "Explain my plan" uses a calculation-based template explanation, and notice upload offers an offline, clearly labelled demo notice.
 
 To go further, copy `.env.example` to `.env.local`:
-- `ANTHROPIC_API_KEY` turns on live Claude (server-side only). `CLAUDE_ENABLED=false` forces the fallbacks; `CLAUDE_DAILY_CALL_CAP` limits spend.
+- Set `AI_PROVIDER=openai` and `OPENAI_API_KEY` for OpenAI. `OPENAI_MODEL` defaults to `gpt-6.1-sol`; `AI_PROVIDER=anthropic` with `ANTHROPIC_API_KEY` keeps Claude available as an alternative. Requests go directly to the selected provider; no AI Gateway account is required.
+- `AI_ENABLED=false` forces manual/template fallbacks. `AI_DAILY_CALL_CAP=100` caps provider calls across all visitors, including failures and the one allowed grounding retry. The shared counter survives provider changes. Existing Anthropic installations without the new settings retain `CLAUDE_ENABLED` and `CLAUDE_DAILY_CALL_CAP` compatibility.
+- Both providers cap output at 4,000 tokens/call. Existing per-session/IP limits, 4 MB uploads, timeouts and explanation caching remain. A request cap is not a dollar budget; input-token/page limits and an application-enforced spending budget are still future work. Configure a project spend limit separately with the provider.
+- OpenAI requests use strict structured output, low reasoning effort, `store: false`, no tools, no automatic transport retries and no content telemetry. This disables Responses storage; it does not promise zero retention under the provider's other policies.
 - `DEMO_UNLOCK_ENABLED=true` turns on the no-payment demo unlock (off by default, even in development).
 - Production also needs `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, and `DEMO_UNLOCK_ENABLED=true` for the jury path.
 

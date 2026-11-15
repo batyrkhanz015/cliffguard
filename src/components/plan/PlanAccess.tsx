@@ -76,7 +76,7 @@ export function PlanAccess() {
 
   if (!visible) return null;
   return (
-    <section aria-label="Exact plan access" className="mx-auto w-full max-w-4xl space-y-5 px-4 py-8 sm:px-6">
+    <section id="plan-access" tabIndex={-1} aria-label="Exact plan access" className="mx-auto w-full max-w-4xl scroll-mt-6 space-y-5 px-4 py-8 sm:px-6">
       {state.kind === 'loading' && (
         <Card>
           <p role="status" aria-live="polite">

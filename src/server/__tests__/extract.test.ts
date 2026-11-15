@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { extractNotice, validateExtraction } from '../claude/extract';
+import { extractNotice, validateExtraction } from '../ai/extract';
 import { EligibilityNoticeExtractionSchema } from '@/lib/noticeExtraction';
 
 import { NOTICE } from '@/test/noticeFixture';
@@ -29,6 +29,6 @@ describe('extraction validation', () => {
   });
   it('falls back without a call when disabled', async () => {
     vi.stubEnv('CLAUDE_ENABLED', 'false');
-    expect(await extractNotice({ bytes: new TextEncoder().encode('%PDF-1.7\n'), type: 'application/pdf' })).toEqual({ error: 'CLAUDE_UNAVAILABLE' });
+    expect(await extractNotice({ bytes: new TextEncoder().encode('%PDF-1.7\n'), type: 'application/pdf' })).toEqual({ error: 'AI_UNAVAILABLE' });
   });
 });

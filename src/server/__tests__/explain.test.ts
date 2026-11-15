@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DANI, DANI_AS_OF, DANI_GIG } from '@/samples/dani';
 import { diagnose } from '@/engine/diagnose';
 import { optimize } from '@/engine/optimizer';
-import { explainPlan, explanationPlanHash, validateExplanation } from '../claude/explain';
-import { dailyCallKey } from '../claude/client';
+import { explainPlan, explanationPlanHash, validateExplanation } from '../ai/explain';
+import { dailyCallKey } from '../ai/client';
 import { store } from '../store';
 
 const scenario = { gig: DANI_GIG, asOf: DANI_AS_OF };

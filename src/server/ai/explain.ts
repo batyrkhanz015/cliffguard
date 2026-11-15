@@ -4,10 +4,11 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import type { Diagnosis } from '@/engine/diagnose';
 import { templateExplanation } from '@/engine/explainTemplate';
 import { ExplanationSchema, type Explanation, type PlanResult } from '@/engine/types';
-import { createClaudeClient, reserveClaudeCall } from './client';
+import { aiCacheVersion, aiProvider, aiSource, createClaudeClient, reserveAiCall } from './client';
 import { allowedNumbers, ungroundedNumbers } from './grounding';
+import { openAiObject } from './openai';
 
-export type PlanExplanation = Explanation & { source: 'claude' | 'template' };
+export type PlanExplanation = Explanation & { source: 'openai' | 'claude' | 'template' };
 export const EXPLANATION_TIMEOUT_MS = 15_000;
 const SYSTEM = `You explain results from a deterministic rules engine. Use only numbers from the engine JSON or tool results.
 Education, not tax advice. Suggest reviewing with a tax preparer for plan changes.
@@ -17,7 +18,7 @@ Answers at most 120 words, plain English, no markdown tables. Write exactly thre
 
 /** Full calculation and static-copy revision, not just the move amounts. No raw record is hashed or sent. */
 export function explanationPlanHash(diagnosis: Diagnosis, plan: PlanResult): string {
-  return createHash('sha256').update(JSON.stringify({ version: 1, diagnosis, plan })).digest('hex');
+  return createHash('sha256').update(JSON.stringify({ version: aiCacheVersion(), diagnosis, plan })).digest('hex');
 }
 
 export function calculationExplanation(diagnosis: Diagnosis, plan: PlanResult): PlanExplanation {
@@ -52,21 +53,28 @@ export async function explainPlan(d: Diagnosis, plan: PlanResult): Promise<PlanE
       if (controller.signal.aborted || Date.now() >= deadline) return fallback();
       // Store reservations cannot be cancelled. A late reservation still consumes its slot,
       // but this request returns on time and never dispatches against that late result.
-      const reserved = await Promise.race([reserveClaudeCall(), timedOut]);
+      const reserved = await Promise.race([reserveAiCall(), timedOut]);
       if (!reserved || controller.signal.aborted || Date.now() >= deadline) return fallback();
-      const response = await createClaudeClient().beta.messages.parse({
-        model: 'claude-opus-5-5', max_tokens: 4000,
-        betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
-        thinking: { type: 'adaptive' },
-        output_config: { effort: 'low', format: zodOutputFormat(ExplanationSchema) },
-        system: SYSTEM,
-        messages: [{ role: 'user', content: JSON.stringify({ diagnosis: d, plan }) + correction }],
-      }, { signal: controller.signal, timeout: Math.max(1, deadline - Date.now()) });
-      if (controller.signal.aborted || response.stop_reason !== 'end_turn') return fallback();
-      const parsed = ExplanationSchema.safeParse(response.parsed_output);
+      let raw: unknown;
+      if (aiProvider() === 'openai') {
+        raw = await openAiObject(ExplanationSchema, SYSTEM, [{ role: 'user', content: JSON.stringify({ diagnosis: d, plan }) + correction }], controller.signal);
+      } else {
+        const response = await createClaudeClient().beta.messages.parse({
+          model: 'claude-opus-5-5', max_tokens: 4000,
+          betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
+          thinking: { type: 'adaptive' },
+          output_config: { effort: 'low', format: zodOutputFormat(ExplanationSchema) },
+          system: SYSTEM,
+          messages: [{ role: 'user', content: JSON.stringify({ diagnosis: d, plan }) + correction }],
+        }, { signal: controller.signal, timeout: Math.max(1, deadline - Date.now()) });
+        if (response.stop_reason !== 'end_turn') return fallback();
+        raw = response.parsed_output;
+      }
+      if (controller.signal.aborted) return fallback();
+      const parsed = ExplanationSchema.safeParse(raw);
       if (!parsed.success) return fallback();
       const validated = validateExplanation(parsed.data, d, plan);
-      if (validated) return { ...validated, source: 'claude' };
+      if (validated) return { ...validated, source: aiSource() };
       const offending = ungroundedNumbers(JSON.stringify(parsed.data), allowedNumbers(d, plan));
       if (offending.length === 0) return fallback();
       correction = `\nYour previous answer used unverified numbers: ${offending.join(', ')}. Try again using only numbers from the supplied JSON.`;

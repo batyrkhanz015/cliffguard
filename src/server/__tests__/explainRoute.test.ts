@@ -6,8 +6,8 @@ import { deleteHousehold, loadHousehold, requireHousehold, replaceInput, saveHou
 import { explanationCacheKey } from '../explanationCache';
 import { endSession } from '../session';
 import { planExport } from '../planAccess';
-import { dailyCallKey } from '../claude/client';
-import { calculationExplanation, explanationPlanHash } from '../claude/explain';
+import { dailyCallKey } from '../ai/client';
+import { calculationExplanation, explanationPlanHash } from '../ai/explain';
 import { limit } from '../ratelimit';
 import { store } from '../store';
 
