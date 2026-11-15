@@ -15,7 +15,7 @@ const FACTS = [
 /** Shown over the sample household only: names the sample inputs and points to the user's own. */
 export function SampleBanner() {
   return (
-    <Card as="aside" className="!border-violet !p-4 sm:!p-5">
+    <Card as="aside" tone="accent" compact>
       <p className="type-eyebrow text-violet">Sample</p>
       <p className="mt-2 font-semibold">You&apos;re looking at a sample: {DANI.adults[0].label}&apos;s family.</p>
       <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">

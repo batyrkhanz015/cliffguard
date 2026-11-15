@@ -1,4 +1,5 @@
 import type { Diagnosis, HouseholdInput, LeverId } from '@/engine';
+import type { HouseholdSource } from '@/server/household';
 import { sendJson, type ApiFailure } from './api';
 import type { GigCheckView, LeverRow, PlanView } from './planView';
 
@@ -10,7 +11,7 @@ import type { GigCheckView, LeverRow, PlanView } from './planView';
 export type GigOffer = { amount: number; canBillInJanuary: boolean };
 
 export type HouseholdResponse = {
-  household: { input: HouseholdInput; lastGig: GigOffer | null; source: 'sample_dani' | 'manual' | 'upload' } | null;
+  household: { input: HouseholdInput; lastGig: GigOffer | null; source: HouseholdSource } | null;
   diagnosis: Diagnosis | null;
 };
 export type PlanResponse = { plan: PlanView; entitled: boolean; levers: LeverRow[] };

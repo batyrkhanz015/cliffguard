@@ -1,16 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import { SampleBanner } from '@/components/shared/SampleBanner';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { moveKey } from '@/lib/keys';
-import { usePlanPreview } from '@/lib/usePlanPreview';
 import type { LoadedHousehold } from '@/lib/useHousehold';
+import { usePlanPreview } from '@/lib/usePlanPreview';
 import { KeepMyCashToggle } from './KeepMyCashToggle';
 import { LeverList } from './LeverList';
 import { MoveCard } from './MoveCard';
-import { SampleBanner } from '@/components/result/SampleBanner';
 import { Totals } from './Totals';
 import { VerdictBadge } from './VerdictBadge';
 

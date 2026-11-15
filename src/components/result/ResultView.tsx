@@ -1,11 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { GigChart } from '@/components/gig/GigChart';
 import { GigInput } from '@/components/gig/GigInput';
 import { GigOptionsTable } from '@/components/gig/GigOptionsTable';
-import Link from 'next/link';
+import { SampleBanner } from '@/components/shared/SampleBanner';
 import { buttonClasses } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { usd } from '@/engine/format';
@@ -19,7 +20,6 @@ import { FlagsAccordion } from './FlagsAccordion';
 import { Headline } from './Headline';
 import { HowWeGotThis } from './HowWeGotThis';
 import { ReportChangeCard } from './ReportChangeCard';
-import { SampleBanner } from './SampleBanner';
 
 /** The result screen (S2) with the gig check (S3) on it. */
 export function ResultView({ household }: { household: LoadedHousehold }) {
@@ -58,7 +58,7 @@ export function ResultView({ household }: { household: LoadedHousehold }) {
       <ReportChangeCard reportChange={diagnosis.reportChange} incomeEstimate={input.marketplace.incomeEstimate} />
 
       <div>
-        <Link href="/plan" className={buttonClasses('primary')}>
+        <Link href="/plan" className={`${buttonClasses('primary')} w-full sm:w-auto`}>
           See my rescue plan
         </Link>
       </div>
