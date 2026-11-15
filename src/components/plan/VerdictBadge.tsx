@@ -16,12 +16,10 @@ type VerdictBadgeProps = {
   /** Extra owed at filing for $1,000 more income (from the diagnosis). */
   per1000: number;
   onAllowRetirement: () => void;
-  /** Shows the Year upsell on an under-the-line plan; omitted until checkout exists. */
-  onSeeYear?: () => void;
 };
 
 /** The plan's verdict, and what it means in plain words for the states that change the next step. */
-export function VerdictBadge({ plan, per1000, onAllowRetirement, onSeeYear }: VerdictBadgeProps) {
+export function VerdictBadge({ plan, per1000, onAllowRetirement }: VerdictBadgeProps) {
   const { text, tone } = LABELS[plan.verdict];
   return (
     <div>
@@ -35,11 +33,6 @@ export function VerdictBadge({ plan, per1000, onAllowRetirement, onSeeYear }: Ve
           <p className="text-gray-700">
             Income moves around. A monthly check-in tells you before it drifts toward the line.
           </p>
-          {onSeeYear && (
-            <Button variant="secondary" onClick={onSeeYear}>
-              See CliffGuard Year
-            </Button>
-          )}
         </div>
       )}
 

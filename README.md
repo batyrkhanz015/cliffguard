@@ -80,7 +80,7 @@ People return because income lands monthly and the year has hard deadlines: Dec 
    |  pure, client-safe engine: src/engine/index.ts
    |  (where you stand, gig check, charts)
    v
- Route handlers  src/app/api/*  (Zod on every input and output)
+ Route handlers  src/app/api/*  (Zod on every input; Claude output validated against schemas)
    |  session cookie (anonymous, httpOnly) -> store (Upstash Redis | in-memory)
    |  rate limits, redaction, entitlement checks      src/server/*
    |
@@ -93,7 +93,7 @@ People return because income lands monthly and the year has hard deadlines: Dec 
 ```
 
 - **Engine (deterministic, no I/O).** Every number comes from here: FPL tables, Form 8962 applicable figure, premium tax credit, repayment, gig check, an ordered legal optimizer ("Keep my cash" puts liquid moves first), deadlines, alerts, 2027 estimate.
-- **Server.** Anonymous session id in an httpOnly cookie, a small store, per-session and per-IP limits, redaction of uploaded content, `.ics` generation, check-in logic.
+- **Server.** Anonymous session id in an httpOnly cookie, a small store, per-session and per-IP limits, redaction of paid plan details for unpaid sessions, `.ics` generation, check-in logic.
 - **Claude's roles are narrow.** It reads documents and explains results. It never computes money. Uploaded text is treated as untrusted, outputs are validated with Zod, and numbers in explanations are checked against the engine.
 
 Layout: `src/engine` (rules in `src/engine/rules`), `src/server`, `src/app/api`, `src/components`, `src/lib`, `src/samples`.
