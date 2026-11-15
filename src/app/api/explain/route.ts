@@ -13,6 +13,8 @@ import { clientIp, readJson, route } from '@/server/route';
 import { getSid } from '@/server/session';
 import { store } from '@/server/store';
 
+export const maxDuration = 60;
+
 export const POST = route(async (request) => {
   requireSameOrigin(request, 'Open your plan from this site.');
   await readJson(request, z.strictObject({}));

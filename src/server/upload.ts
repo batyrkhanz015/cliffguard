@@ -1,7 +1,7 @@
 import 'server-only';
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from '@/lib/uploadLimit';
 import { ApiError } from './errors';
 
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 // Allows multipart headers/fields while bounding the stream before formData() allocates it.
 export const MAX_UPLOAD_REQUEST_BYTES = MAX_UPLOAD_BYTES + 16 * 1024;
 export const UPLOAD_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'] as const;
@@ -29,7 +29,7 @@ export function matchesUploadType(bytes: Uint8Array, type: string): boolean {
 /** Read at most `maximum` bytes, including when Content-Length is absent or dishonest. */
 export async function readBoundedBody(request: Request, maximum: number): Promise<Uint8Array> {
   const declared = Number(request.headers.get('content-length'));
-  if (Number.isFinite(declared) && declared > maximum) throw new ApiError('FILE_TOO_LARGE', 413, 'Choose one file of 5 MB or less.');
+  if (Number.isFinite(declared) && declared > maximum) throw new ApiError('FILE_TOO_LARGE', 413, `Choose one file of ${MAX_UPLOAD_MB} MB or less.`);
   const reader = request.body?.getReader();
   if (!reader) throw new ApiError('VALIDATION', 400, 'Choose a notice to upload.');
   const chunks: Uint8Array[] = [];
@@ -42,7 +42,7 @@ export async function readBoundedBody(request: Request, maximum: number): Promis
       size += value.byteLength;
       if (size > maximum) {
         await reader.cancel();
-        throw new ApiError('FILE_TOO_LARGE', 413, 'Choose one file of 5 MB or less.');
+        throw new ApiError('FILE_TOO_LARGE', 413, `Choose one file of ${MAX_UPLOAD_MB} MB or less.`);
       }
       chunks.push(value);
     }

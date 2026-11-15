@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { POST } from '@/app/api/extract/route';
+import { MAX_UPLOAD_BYTES } from '@/lib/uploadLimit';
 import { extractNotice } from '../claude/extract';
 import { limit } from '../ratelimit';
 import { store } from '../store';
@@ -56,8 +57,8 @@ describe('extraction route', () => {
     expect((await POST(new Request('http://localhost/api/extract', { method: 'POST', body: form }))).status).toBe(400);
     expect(extractNotice).not.toHaveBeenCalled();
   });
-  it('rejects a file over 5 MiB and bounds a body without Content-Length', async () => {
-    expect((await POST(multipart(1, 'application/pdf', '%PDF-' + 'x'.repeat(5 * 1024 * 1024)))).status).toBe(413);
+  it('rejects a file over 4 MiB and bounds a body without Content-Length', async () => {
+    expect((await POST(multipart(1, 'application/pdf', '%PDF-' + 'x'.repeat(MAX_UPLOAD_BYTES)))).status).toBe(413);
     const request = new Request('http://localhost/api/extract', { method: 'POST', headers: { 'content-type': 'application/json' }, body: 'x'.repeat(1025) });
     expect(request.headers.has('content-length')).toBe(false);
     expect((await POST(request)).status).toBe(413);

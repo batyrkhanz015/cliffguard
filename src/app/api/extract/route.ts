@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
+import { MAX_UPLOAD_MB } from '@/lib/uploadLimit';
 import { extractNotice } from '@/server/claude/extract';
 import { ApiError } from '@/server/errors';
 import { requireSameOrigin } from '@/server/origin';
@@ -12,6 +13,8 @@ import { checkUpload, matchesUploadType, MAX_UPLOAD_REQUEST_BYTES, readBoundedBo
 export const runtime = 'nodejs';
 const SampleRequest = z.object({ sample: z.literal('dani_notice') }).strict();
 const MANUAL_FALLBACK = "Couldn't read it. Enter the numbers below.";
+
+export const maxDuration = 60;
 
 /** Documents are held only in this request's memory; extraction never loads or saves a household. */
 export const POST = route(async (request) => {
@@ -48,7 +51,7 @@ export const POST = route(async (request) => {
         throw new ApiError('VALIDATION', 400, 'Upload exactly one file and choose an eligibility notice.');
       }
       const checked = checkUpload(upload);
-      if (!checked.ok) throw new ApiError(checked.code, checked.status, checked.code === 'FILE_TOO_LARGE' ? 'Choose one file of 5 MB or less.' : 'Choose a PDF, PNG, JPEG or WebP notice.');
+      if (!checked.ok) throw new ApiError(checked.code, checked.status, checked.code === 'FILE_TOO_LARGE' ? `Choose one file of ${MAX_UPLOAD_MB} MB or less.` : 'Choose a PDF, PNG, JPEG or WebP notice.');
       file = { bytes: new Uint8Array(await upload.arrayBuffer()), type: upload.type };
     } else {
       throw new ApiError('UNSUPPORTED_FILE_TYPE', 422, 'Choose a PDF, PNG, JPEG or WebP notice.');
